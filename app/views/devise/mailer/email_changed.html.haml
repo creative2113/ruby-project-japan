@@ -1,0 +1,13 @@
+%p
+  = t('hello', email: @email)
+- if @resource.try(:unconfirmed_email?)
+  %p
+    = t('notify_email_changing', email: @resource.unconfirmed_email)
+- else
+  %p
+    = t('notify_email_changed', email: @resource.email)
+
+%br
+%p ※このメールに対する返信は受け付けておりません。
+%br
+%p= EasySettings.service_name

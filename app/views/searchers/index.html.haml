@@ -1,0 +1,147 @@
+= javascript_include_tag 'searchers.js'
+
+%body#top
+
+  .container
+    = render partial: 'layouts/notice'
+
+    = render partial: 'layouts/top_notice'
+
+    #contents
+      %h1.page_main_title 単一企業HP情報の取得
+
+      - if !@result_flg
+        .image_box
+          = image_tag 'top_single_company_site_banner_2x.png'
+
+      %section
+        #discription
+          %ul
+            %li 企業のホームページのURLから企業情報(主に住所と電話番号)を取得してきます。
+            %li 取得できないサイトもまだありますが、アップグレードさせていきます。
+
+        #search_box.card-panel.with-title-band
+          .card-title-band 単一の企業情報の取得
+
+          .row
+            .col.s12
+              #notice-msg.notice-msg
+
+              .sample_list_toggle_title.cursor-pointer.icon-with-text.mb-2
+                %i.material-icons.smaller= 'add_circle'
+                取得お試しサイト一覧
+              .sample_list_area{style: 'display: none;'}
+                %ul
+                  %li.mt-1
+                    .exec_sample.btn.waves-effect.waves-light{ data: 'https://www.nisshin.com/' } お試し実行
+                    =link_to '日清製粉グループ', 'https://www.nisshin.com/', target: :_blank
+                  %li.mt-1
+                    .exec_sample.btn.waves-effect.waves-light{ data: 'https://www.honda.co.jp/' } お試し実行
+                    =link_to '本田技研工業株式会社', 'https://www.honda.co.jp/', target: :_blank
+                  %li.mt-1
+                    .exec_sample.btn.waves-effect.waves-light{ data: 'https://www.kddi.com/' } お試し実行
+                    =link_to 'KDDI株式会社', 'https://www.kddi.com/', target: :_blank
+                  %li.mt-1
+                    .exec_sample.btn.waves-effect.waves-light{ data: 'https://www.daiichisankyo.co.jp/' } お試し実行
+                    =link_to '第一三共株式会社', 'https://www.daiichisankyo.co.jp/', target: :_blank
+                  %li.mt-1
+                    .exec_sample.btn.waves-effect.waves-light{ data: 'https://www.olympus.co.jp/' } お試し実行
+                    =link_to 'オリンパス株式会社', 'https://www.olympus.co.jp/', target: :_blank
+
+              %br
+              取得したいコーポレートサイトのURLを入力してください。(サービス、商品サイトではなく、企業サイトを指定してください。)
+              %br
+              または、検索キーワードを入力すると、URLを検索できます。
+              - unless user_signed_in?
+                #guide-finger.blinking
+                  = image_tag 'finger.png', id: 'finger_img'
+                  URLかキーワードを入力してみてください
+            .input-field.col.s12
+              = text_field :config, :url, class: 'validate'
+              = label :config, :url, 'URLかキーワード'
+              %span#validate_msg.alert-msg
+              %br
+              %p#finding_candidate_urls.alert-msg.blinking{style: 'display:none;'} 候補URLを検索しています。少々、お待ちください。
+              #candidate_urls
+
+            #storage.col.s12
+              %p
+                %label
+                  = check_box :config, :use_storage
+                  %span 保存されているデータがあれば使う(取得スピードが上がります)
+              #using_storaged_date_condition.row{style: 'display:none;'}
+                .input-field.col.s2
+                  = text_field :config, :using_storaged_date, placeholder: '1 - 9999'
+                  %span#storage_condition_validate_msg.alert-msg
+                .continuous-text
+                  日前の取得データなら使う(空欄で特に指定しない)
+            - unless user_signed_in?
+              %br
+              .col.s12.mt-2
+                %span.emphasis-text
+                  ※ 本サービスを実行される場合は、
+                  = link_to 'サービス利用規約', '/information#terms_of_service', target: :_blank
+                  %span に同意したものとみなします。
+                  %br
+                  ※ 本サービスは完全無料でご利用いただけます。
+
+
+            .col.s12.no_padding.center.margin-top-bottom
+              %button#search.btn-large.waves-effect.waves-light.accent{type: "submit", name: "action"}
+                検索
+                %i.material-icons.right send
+            .center.text-1.search-announce.blinking{style: 'display:none;'}
+              情報を取得中です。サイトにより数十秒から数分ほど時間がかかります。
+
+      - if @result_flg
+        %section
+
+          #output.card-panel.with-title-band
+            .card-title-band 取得結果
+
+            #output_format_select.center
+              %p
+                %label
+                  = radio_button_tag :output_format, :table, :checked
+                  %span 表形式
+                %label
+                  = radio_button_tag :output_format, :json
+                  %span JSON形式
+
+            .center
+              %p
+                %b= "取得企業URL : #{@url}"
+            %br
+
+            .center.text-4.alert-msg
+              複数の企業情報をまとめて取得することもできます。ぜひ一度お試し下さい。
+              %br
+              = link_to '複数の企業情報をまとめて取得', '/request/multiple'
+
+            #output_table
+              %table.striped
+                %tr
+                  %th.col1 種類
+                  %th.col2 名称
+                  %th 値
+                - @result.each do |content|
+                  %tr
+                    %td
+                      = content[:category]
+                    %td
+                      = content[:name]
+                    %td
+                      - content_text = content[:category] == Crawler::Items.local(get_current_user.language)[Crawler::Items.inquiry_form] ? convert_url_text(content[:value]) : content[:value]
+                      - if content_text.class == String
+                        = content_text
+                      - else
+                        - content_text.each do |con|
+                          = con
+            #output_json.text_box1{style: 'display:none;'}
+              = simple_format(convert_html_text(@json))
+
+            %br
+            .center.text-4.alert-msg
+              複数の企業情報をまとめて取得することもできます。ぜひ一度お試し下さい。
+              %br
+              = link_to '複数の企業情報をまとめて取得', '/request/multiple'

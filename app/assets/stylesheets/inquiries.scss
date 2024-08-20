@@ -1,0 +1,14 @@
+// Place all the styles related to the inquiries controller here.
+// They will automatically be included in application.css.
+// You can use Sass (SCSS) here: http://sass-lang.com/
+
+.margine_bottom {
+  margin-bottom: 20px;
+}
+
+#new_inquiry{
+  .no_padding {
+    padding-left: initial;
+    padding-right: initial;
+  }
+}

@@ -1,0 +1,10 @@
+.field_corporate_individual_url_contents_config{data_num: data_num.to_i, url_num: url_num.to_i}
+  .row
+    .alert-msg.ml-2{id: "validate_msg__corporate_individual_#{url_num}_contents_#{data_num}"}
+  .row
+    .input-field.col.s6.shrink_margin_bottom
+      = text_field_tag "request[corporate_individual][#{url_num}][contents][#{data_num}][title]", val('', :request, :corporate_individual, url_num, :contents, data_num, :title)
+      = label_tag "request[corporate_individual][#{url_num}][contents][#{data_num}][title]", '種別名 または そのXパス'
+    .input-field.col.s6.shrink_margin_bottom
+      = text_field_tag "request[corporate_individual][#{url_num}][contents][#{data_num}][text]", val('', :request, :corporate_individual, url_num, :contents, data_num, :text)
+      = label_tag "request[corporate_individual][#{url_num}][contents][#{data_num}][text]", 'サンプル文字 または そのXパス'

@@ -1,0 +1,819 @@
+require 'rails_helper'
+require 'features/billing/payment_histories_utils'
+
+RSpec.feature "別の紹介者済みユーザ -> 紹介者トライル登録 -> 有料プラン移行", type: :feature do
+  let_it_be(:master_test_light_plan)    { create(:master_billing_plan, :test_light) }
+  let_it_be(:master_test_standard_plan) { create(:master_billing_plan, :test_standard) }
+  let_it_be(:master_beta_standard_plan) { create(:master_billing_plan, :beta_standard) }
+
+  let(:mail_address)      { 'test@request.com' }
+  let(:company_name)      { '田んぼ株式会社' }
+  let(:password)          { 'asdf1234' }
+  let(:card_exp_month)    { '11' }
+  let(:card_exp_year)     { (Time.zone.now.year + 2).to_s }
+  let(:card_exp_year_str) { card_exp_year[-2..-1] }
+  let(:card_name)         { 'SUZUKI SIGERU' }
+
+  let(:coupon_code)  { '1234567' }
+  let(:coupon_code2) { '12121212' }
+  let!(:referrer)    { create(:referrer, code: coupon_code) }
+  let!(:referrer2)   { create(:referrer, code: coupon_code2) }
+  let!(:coupon)      { create(:referrer_trial) }
+
+  let(:user) { create(:user, id: Random.rand(999999), email: mail_address, company_name: company_name, password: password, billing: :free ) }
+
+  before do
+    Timecop.freeze
+
+    allow(Billing).to receive(:plan_list).and_return(['test_light', 'test_standard', 'beta_standard'])
+
+    user.update!(referrer: referrer2, referral_reason: User.referral_reasons[:url])
+    sign_in user
+  end
+
+  after do
+    ActionMailer::Base.deliveries.clear
+    user.billing.delete_customer if user.billing.reload.customer_id.present?
+    Timecop.return
+  end
+
+  def check_billing_data_row_in_configure_page(row_num, data_history = nil)
+    if row_num == 1
+      within 'table tbody tr:first-child' do
+        expect(page).to have_content '課金日'
+        expect(page).to have_content '項目名'
+        expect(page).to have_content '金額'
+      end
+    else
+      within "table tbody tr:nth-child(#{row_num})" do
+        expect(page).to have_selector('td:nth-child(1)', text: data_history.billing_date.strftime("%Y年%-m月%-d日"))
+        expect(page).to have_selector('td:nth-child(2)', text: data_history.item_name)
+        expect(page).to have_selector('td:nth-child(3)', text: "#{data_history.price.to_s(:delimited)}円")
+      end
+    end
+  end
+
+  scenario '紹介者トライル申し込み -> 有料プラン移行', js: true do
+    real_time_now = Time.zone.now
+    Capybara.current_session.driver.browser.manage.window.resize_to(1680, 1000)
+
+    user = User.find_by_email(mail_address)
+
+    expect(user.reload.referrer).to eq referrer2
+    expect(user.referral_reason).to eq 'url'
+
+
+    visit root_path
+    click_link '設定'
+
+    expect(page).to have_selector('h1', text: 'アカウント設定')
+
+    within '#plan_registration' do
+      expect(page).to have_selector('.card-title-band', text: 'プラン登録')
+
+      expect(page).to have_content 'ご登録誠にありがとうございます。'
+
+      expect(page).to have_content 'プラン選択'
+
+      MasterBillingPlan.application_enabled.each do |plan|
+        expect(page).to have_content plan.name
+        expect(page).to have_content "料金: #{plan.price.to_s(:delimited)}円/月"
+      end
+
+      expect(page).to have_content '銀行振込'
+    end
+
+    within '#current_status' do
+      expect(page).to have_selector('.card-title-band', text: '現在の利用状況')
+
+      expect(page).to have_content '現在のプラン'
+      expect(page).to have_content '無料プラン'
+
+      expect(page).not_to have_content '課金状況'
+      expect(page).not_to have_content '有効期限'
+      expect(page).not_to have_content '次回更新日'
+
+      expect(page).to have_content "今月の実行回数　　　　　　0/20"
+      expect(page).to have_content "今月の取得件数　　　　　　0/200"
+      expect(page).to have_content "今月の簡易調査依頼回数　　0/1"
+    end
+
+    expect(page).not_to have_content "課金、請求履歴"
+
+    expect(page).to have_selector('.card-title-band', text: 'ユーザ情報の変更')
+
+    within '#cancel_account_box' do
+      expect(page).to have_selector('.card-title-band', text: '退会する')
+
+      expect(page).not_to have_content I18n.t('you_can_cancel_account_after_stop_subscription')
+      expect(page).to have_selector('button', text: '退会')
+    end
+
+    expect(page).not_to have_content I18n.t('you_can_cancel_account_after_stop_subscription')
+
+    #-------------------
+    #  クーポンコード入力
+    #-------------------
+    within '#coupon' do
+      expect(page).to have_selector('.card-title-band', text: 'クーポンコード入力')
+
+      # クーポンコードをブランクで送信
+      find('button', text: '送信').click
+    end
+    expect(page).to have_content 'クーポンコードを入力してください。'
+
+    sleep 0.5
+    expect(user.reload.referrer).to eq referrer2
+    expect(user.referral_reason).to eq 'url'
+    expect(user.coupons).to be_blank
+
+
+    within '#coupon' do
+      expect(page).to have_selector('.card-title-band', text: 'クーポンコード入力')
+
+      # クーポンコードを間違えて入力
+      fill_in 'coupon_code', with: '123123123'
+
+      find('button', text: '送信').click
+    end
+
+    expect(page).to have_content 'コードが間違っています。'
+
+    expect(page).to have_selector('h1', text: 'アカウント設定')
+
+
+    within '#coupon' do
+      expect(page).to have_selector('.card-title-band', text: 'クーポンコード入力')
+
+      # クーポンコードを正しく入力
+      fill_in 'coupon_code', with: coupon_code
+
+      find('button', text: '送信').click
+    end
+
+    sleep 1
+    expect(user.reload.referrer).to eq referrer
+    expect(user.referral_reason).to eq 'coupon'
+    expect(user.coupons).to be_blank
+
+
+    expect(page).to have_selector('h1', text: I18n.t('coupon.title'))
+
+    within '#coupon' do
+      expect(page).to have_selector('.card-title-band', text: 'お試し有料プランのご利用')
+      expect(page).to have_content('10日間の有料スタンダード版お試し利用が可能です。')
+      expect(page).to have_content('この後、クレジットカードのご登録が必須です。')
+      expect(page).to have_content('お試し期間が過ぎますと、自動的に課金され、引き続き有料プランがご利用できます。')
+      expect(page).to have_content('お試し期間中に解約されますと、10日後にお試し利用が終了します。課金はされません。')
+    end
+
+
+    # アカウント設定に戻る
+    click_link '設定'
+
+    expect(page).to have_selector('h1', text: 'アカウント設定')
+
+
+    within '#coupon' do
+      expect(page).to have_selector('.card-title-band', text: 'クーポンコード入力')
+
+      # 別の人のクーポンコードを入力
+      fill_in 'coupon_code', with: coupon_code2
+
+      find('button', text: '送信').click
+    end
+
+    expect(page).to have_content 'このクーポンは無効です。'
+
+    sleep 0.5
+    expect(user.reload.referrer).to eq referrer
+    expect(user.referral_reason).to eq 'coupon'
+    expect(user.coupons).to be_blank
+
+
+    #-------------------
+    #  クーポンコード再度入力
+    #-------------------
+    within '#coupon' do
+      expect(page).to have_selector('.card-title-band', text: 'クーポンコード入力')
+
+      # クーポンコードを正しく入力
+      fill_in 'coupon_code', with: coupon_code
+
+      find('button', text: '送信').click
+    end
+
+    expect(user.reload.referrer).to eq referrer
+    expect(user.referral_reason).to eq 'coupon'
+    expect(user.coupons).to be_blank
+
+    within '#coupon' do
+      expect(page).to have_selector('.card-title-band', text: 'お試し有料プランのご利用')
+      expect(page).to have_content('10日間の有料スタンダード版お試し利用が可能です。')
+      expect(page).to have_content('この後、クレジットカードのご登録が必須です。')
+      expect(page).to have_content('お試し期間が過ぎますと、自動的に課金され、引き続き有料プランがご利用できます。')
+      expect(page).to have_content('お試し期間中に解約されますと、10日後にお試し利用が終了します。課金はされません。')
+
+      find('#payjp_checkout_box input[value="お試し利用"]').click
+    end
+
+    switch_to_frame find('#payjp-checkout-iframe')
+
+    expect(page).to have_content '支払い情報'
+
+    fill_in 'cardnumber', with: '4242424242424242'
+    fill_in 'ccmonth', with: card_exp_month
+    fill_in 'ccyear', with: card_exp_year_str
+    fill_in 'cvc', with: '252'
+    fill_in 'ccname', with: card_name
+
+    find('input#payjp_cardSubmit').click
+
+    sleep 0.5 # これがないと、エラーが発生する。Capybara::ElementNotFound: Unable to find xpath "/html"
+    page.source # これがないと、エラーが発生する。Capybara::ElementNotFound: Unable to find xpath "/html"
+
+    expect(page).to have_content 'お試し利用の登録に成功しました。お試しでご利用できます。'
+
+    #-----------------
+    #  DB登録確認
+    #-----------------
+    expect(user.reload.referrer).to eq referrer
+    expect(user.referral_reason).to eq 'coupon'
+    expect(user.coupons.first).to eq coupon
+
+    expect(user.billing.payment_method).to eq 'credit'
+    expect(user.expiration_date).to eq (Time.zone.now + 10.days).end_of_day
+    expiration_date = user.expiration_date.dup
+
+    # current_planの作成チェック
+    expect(user.billing.current_plans).to be_present
+    plan = user.billing.current_plans[0]
+    expect(plan.name).to eq 'β版スタンダードプラン'
+    expect(plan.price).to eq 4000
+    expect(plan.type).to eq 'monthly'
+    expect(plan.charge_date).to eq (Time.zone.now + 11.days).day.to_s
+    expect(plan.status).to eq 'ongoing'
+    expect(plan.start_at).to eq Time.zone.now.iso8601
+    expect(plan.end_at).to be_nil
+    expect(plan.trial).to be_truthy
+    expect(plan.next_charge_date).to eq (Time.zone.now + 11.days).to_date
+    expect(plan.last_charge_date).to be_nil
+    plan_updated_at = plan.updated_at
+    charge_date = plan.charge_date.dup
+    start_at = plan.start_at.dup
+
+    # billing_historyのチェック
+    expect(user.billing.histories.reload.size).to eq 0
+
+    his = MonthlyHistory.find_around(user)
+    expect(user.monthly_histories.size).to eq 2
+    expect(his.plan).to eq EasySettings.plan[:beta_standard]
+    expect(his.start_at).to eq user.referrer_trial_coupon.created_at.beginning_of_day
+    expect(his.end_at).to eq user.expiration_date.iso8601
+    expect(user.monthly_histories.first.end_at).to eq his.start_at - 1.second
+    last_his_updated_at = his.updated_at
+
+
+    # 決済アカウント作成されていること確認！！
+
+    #-----------------
+    #  PAYJP 登録確認
+    #-----------------
+    expect(user.billing.reload.customer_id).to be_present
+    expect(user.billing.search_customer(1, -1)).to be_present
+
+    payjp_res = user.billing.get_customer_info
+    # カード
+    expect(payjp_res.cards.count).to eq 1
+    card_id = payjp_res.cards.data[0].id
+    expect(payjp_res.cards.data[0].brand).to eq 'Visa'
+    expect(payjp_res.cards.data[0].exp_month).to eq card_exp_month.to_i
+    expect(payjp_res.cards.data[0].exp_year).to eq card_exp_year.to_i
+    expect(payjp_res.cards.data[0].last4).to eq '4242'
+    expect(payjp_res.cards.data[0].name).to eq card_name
+    # メタデータ
+    expect(payjp_res.metadata.company_name).to eq company_name
+    expect(payjp_res.metadata.user_id).to eq user.id.to_s
+
+    # 売上はないこと
+    payjp_res = user.billing.get_charges(1)
+    expect(payjp_res.count).to eq 0
+    expect(payjp_res.data).to be_blank
+
+
+    # メールが飛ばないこと
+    expect(ActionMailer::Base.deliveries.size).to eq(0)
+    ActionMailer::Base.deliveries.clear
+
+    #-----------------
+    #  画面の確認
+    #-----------------
+    within '#change_plan_card' do
+      expect(page).to have_selector('.card-title-band', text: '課金プラン、カード情報の変更')
+
+      expect(page).to have_content '課金プラン、カード情報の変更はこちら'
+    end
+
+    within '#current_status' do
+      expect(page).to have_selector('.card-title-band', text: '現在の利用状況')
+
+      expect(page).to have_content '現在のプラン'
+      expect(page).to have_content 'β版スタンダードプラン'
+      expect(page).not_to have_content 'Rspecテスト スタンダードプラン'
+
+      user.billing.reload
+      expect(page).to have_content '課金状況'
+      expect(page).to have_content 'お試し利用中'
+      expect(page).not_to have_content 'お試し利用中、停止リクエスト済み'
+      expect(page).not_to have_content '次回更新日'
+      expect(page).to have_content "有効期限　　　　#{user.expiration_date.strftime("%Y年%-m月%-d日")}"
+
+      expect(page).to have_content "今月の実行回数　　　　　　0/30"
+      expect(page).to have_content "今月の取得件数　　　　　　0/5,000"
+      expect(page).to have_content "今月の簡易調査依頼回数　　0/3"
+    end
+
+    expect(page).not_to have_content "課金、請求履歴"
+
+    within '#cancel_account_box' do
+      expect(page).to have_selector('.card-title-band', text: '退会する')
+
+      expect(page).to have_content I18n.t('you_can_cancel_account_after_stop_subscription')
+    end
+
+
+    #-------------------
+    #  クーポンコード再度入力
+    #-------------------
+    within '#coupon' do
+      expect(page).to have_selector('.card-title-band', text: 'クーポンコード入力')
+
+      # クーポンコードを正しく入力
+      fill_in 'coupon_code', with: coupon_code
+
+      find('button', text: '送信').click
+    end
+
+    expect(page).to have_content 'このクーポンは使用済みです。'
+
+
+
+    # 課金ワーカーを実行
+    BillingWorker.all_execute
+    expect(ActionMailer::Base.deliveries.size).to eq(1)
+    expect(ActionMailer::Base.deliveries[0].body.raw_source).to match(/ビリングワーカー 完了/)
+    expect(ActionMailer::Base.deliveries[0].body.raw_source).not_to match(/PLAN_ID: #{plan.id}, TYPE: #{plan.type}/)
+    ActionMailer::Base.deliveries.clear
+
+    click_link '設定'
+
+    # monthly_history 変化がないこと
+    expect(user.monthly_histories.reload.size).to eq 2
+    expect(MonthlyHistory.find_around(user).reload.updated_at).to eq last_his_updated_at
+    # current_plan 変化がないこと
+    expect(user.billing.current_plans.reload[0].updated_at).to eq plan_updated_at
+    # billing_histories 変化がないこと
+    expect(user.billing.histories.reload.size).to eq 0
+
+    # 期限日
+    expect(user.reload.expiration_date).to eq expiration_date
+    expect(user.next_planned_expiration_date).to be_nil
+
+
+    his = MonthlyHistory.find_around(user)
+    his.update!(request_count: 5, acquisition_count: 100)
+
+    click_link '設定'
+
+    within '#current_status' do
+      expect(page).to have_selector('.card-title-band', text: '現在の利用状況')
+
+      expect(page).to have_content "今月の実行回数　　　　　　5/30"
+      expect(page).to have_content "今月の取得件数　　　　　　100/5,000"
+      expect(page).to have_content "今月の簡易調査依頼回数　　0/3"
+    end
+
+
+    #-------------------
+    #  有効期限内の当日
+    #-------------------
+    Timecop.travel(user.expiration_date - 10.minutes)
+    Timecop.freeze
+
+    # monthly_history 変化がないこと
+    expect(user.monthly_histories.reload.size).to eq 2
+    expect(MonthlyHistory.find_around(user).reload.updated_at).to eq last_his_updated_at
+    # current_plan 変化がないこと
+    expect(user.billing.current_plans.reload[0].updated_at).to eq plan_updated_at
+    # billing_histories 変化がないこと
+    expect(user.billing.histories.reload.size).to eq 0
+
+    # 期限日
+    expect(user.reload.expiration_date).to eq expiration_date
+    expect(user.next_planned_expiration_date).to be_nil
+
+
+    # 課金ワーカーを実行
+    BillingWorker.all_execute
+    expect(ActionMailer::Base.deliveries.size).to eq(1)
+    expect(ActionMailer::Base.deliveries[0].body.raw_source).to match(/ビリングワーカー 完了/)
+    expect(ActionMailer::Base.deliveries[0].body.raw_source).not_to match(/PLAN_ID: #{plan.id}, TYPE: #{plan.type}/)
+    ActionMailer::Base.deliveries.clear
+
+    click_link '設定'
+
+
+    # monthly_history 変化がないこと
+    expect(user.monthly_histories.reload.size).to eq 2
+    expect(MonthlyHistory.find_around(user).reload.updated_at).to eq last_his_updated_at
+    # current_plan 変化がないこと
+    expect(user.billing.current_plans.reload[0].updated_at).to eq plan_updated_at
+    # billing_histories 変化がないこと
+    expect(user.billing.histories.reload.size).to eq 0
+
+    # 期限日
+    expect(user.reload.expiration_date).to eq expiration_date
+    expect(user.next_planned_expiration_date).to be_nil
+
+    #-----------------
+    #  画面の確認
+    #-----------------
+    expect(page).to have_selector('h1', text: 'アカウント設定')
+
+    within '#change_plan_card' do
+      expect(page).to have_selector('.card-title-band', text: '課金プラン、カード情報の変更')
+
+      expect(page).to have_content '課金プラン、カード情報の変更はこちら'
+    end
+
+    within '#current_status' do
+      expect(page).to have_selector('.card-title-band', text: '現在の利用状況')
+
+      expect(page).to have_content '現在のプラン'
+      expect(page).to have_content 'β版スタンダードプラン'
+      expect(page).not_to have_content 'Rspecテスト スタンダードプラン'
+
+      expect(page).to have_content '課金状況'
+      expect(page).to have_content 'お試し利用中'
+      expect(page).not_to have_content 'お試し利用中、停止リクエスト済み'
+      expect(page).to have_content "有効期限　　　　#{user.expiration_date.strftime("%Y年%-m月%-d日")}"
+      expect(page).not_to have_content '次回更新日'
+
+      expect(page).to have_content "今月の実行回数　　　　　　5/30"
+      expect(page).to have_content "今月の取得件数　　　　　　100/5,000"
+      expect(page).to have_content "今月の簡易調査依頼回数　　0/3"
+    end
+
+    expect(page).not_to have_content "課金、請求履歴"
+
+    within '#cancel_account_box' do
+      expect(page).to have_selector('.card-title-band', text: '退会する')
+
+      expect(page).to have_content I18n.t('you_can_cancel_account_after_stop_subscription')
+      expect(page).not_to have_selector('button', text: '退会')
+    end
+
+
+    #-------------------
+    #  有効期限が過ぎた
+    #-------------------
+    Timecop.travel(user.expiration_date + 10.minutes)
+    Timecop.freeze
+
+
+    expiration_date      = user.expiration_date.dup
+    next_expiration_date = Time.zone.now + 1.month
+
+    click_link '設定'
+
+
+    # monthly_history 変化がないこと
+    expect(user.monthly_histories.reload.size).to eq 3
+    his = MonthlyHistory.find_around(user)
+    expect(his.plan).to eq EasySettings.plan[:beta_standard]
+    expect(his.start_at).to eq Time.zone.now.beginning_of_day.iso8601
+    expect(his.end_at).to be > user.expiration_date.iso8601
+    expect(his.end_at).to be > Time.zone.now + 27.days
+    expect(user.monthly_histories[-2].end_at).to eq his.start_at - 1.second
+    last_his_updated_at = his.updated_at
+
+
+    # current_plan 変化がないこと
+    expect(user.billing.current_plans.reload[0].updated_at).to eq plan_updated_at
+    # billing_histories 変化がないこと
+    expect(user.billing.histories.reload.size).to eq 0
+
+    # 期限日
+    expect(user.reload.expiration_date).to eq expiration_date
+    expect(user.next_planned_expiration_date).to eq Time.zone.now.next_month.yesterday.end_of_day
+
+
+    #-----------------
+    #  画面の確認
+    #-----------------
+    expect(page).to have_selector('h1', text: 'アカウント設定')
+
+    within '#change_plan_card' do
+      expect(page).to have_selector('.card-title-band', text: '課金プラン、カード情報の変更')
+
+      expect(page).to have_content '課金プラン、カード情報の変更はこちら'
+    end
+
+    within '#current_status' do
+      expect(page).to have_selector('.card-title-band', text: '現在の利用状況')
+
+      expect(page).to have_content '現在のプラン'
+      expect(page).to have_content 'β版スタンダードプラン'
+      expect(page).not_to have_content 'Rspecテスト スタンダードプラン'
+
+      expect(page).to have_content '課金状況'
+      expect(page).not_to have_content 'お支払い済み'
+      expect(page).to have_content 'お試し利用中'
+      expect(page).not_to have_content 'お試し利用中、停止リクエスト済み'
+      expect(page).to have_content "有効期限　　　　#{user.expiration_date.strftime("%Y年%-m月%-d日")}"
+      expect(page).not_to have_content '次回更新日'
+
+
+      expect(page).to have_content "今月の実行回数　　　　　　0/30"
+      expect(page).to have_content "今月の取得件数　　　　　　0/5,000"
+      expect(page).to have_content "今月の簡易調査依頼回数　　0/3"
+    end
+
+    expect(page).not_to have_content "課金、請求履歴"
+
+    within '#cancel_account_box' do
+      expect(page).to have_selector('.card-title-band', text: '退会する')
+
+      expect(page).to have_content I18n.t('you_can_cancel_account_after_stop_subscription')
+      expect(page).not_to have_selector('button', text: '退会')
+    end
+
+    click_link '課金プラン、カード情報の変更はこちら'
+
+    expect(page).to have_selector('h1', text: 'プラン、カード情報変更')
+
+    within '#change_card' do
+      expect(page).to have_selector('.card-title-band', text: 'カード情報の変更')
+
+      expect(page).to have_content '現在の登録カード'
+      expect(page).to have_content 'Visa'
+      expect(page).to have_content '4242'
+
+      expect(page).to have_selector('#payjp_checkout_box input[value="カード変更"]')
+    end
+
+    within '#modify_plan' do
+      expect(page).to have_selector('.card-title-band', text: 'プラン変更')
+
+      expect(page).to have_content 'お手数ですが、 お問い合わせフォーム よりお申し出ください。'
+    end
+
+    within '#stop_plan' do
+      expect(page).to have_selector('.card-title-band', text: '課金停止（お試し利用の解約）')
+
+      expect(page).to have_content '課金を停止後、有効期限内は同プランでご使用できます。有効期限後から、無料プランユーザとなります。'
+      expect(page).to have_content 'また、有効期限内はプラン変更、および、プラン再登録は受け付けられなくなります。'
+      expect(page).to have_content "有効期限: #{user.expiration_date.strftime("%Y年%-m月%-d日")}"
+
+      fill_in 'password_for_plan_stop', with: password
+
+      find('#stop_subscription', text: '課金停止').click
+
+      page.driver.browser.switch_to.alert.accept
+    end
+
+    sleep 0.5 # これがないと、エラーが発生する。Capybara::ElementNotFound: Unable to find xpath "/html"
+    page.source # これがないと、エラーが発生する。Capybara::ElementNotFound: Unable to find xpath "/html"
+
+    expect(page).to have_content '課金の更新日が過ぎているため、今の時間は停止できません。申し訳ありませんが、課金の更新処理が完了するまでお待ちください。更新処理は1日以内に完了する予定です。'
+
+
+    # monthly_history 変化がないこと
+    expect(user.monthly_histories.reload.size).to eq 3
+    expect(MonthlyHistory.find_around(user).reload.updated_at).to eq last_his_updated_at
+    # current_plan 変化がないこと
+    expect(user.billing.current_plans.reload[0].trial).to be_truthy
+    expect(user.billing.current_plans[0].updated_at).to eq plan_updated_at
+    # billing_histories 変化がないこと
+    expect(user.billing.histories.reload.size).to eq 0
+
+    # 期限日
+    expect(user.reload.expiration_date).to eq expiration_date
+    expect(user.next_planned_expiration_date).to eq Time.zone.now.next_month.yesterday.end_of_day
+
+
+    # 課金ワーカーを実行
+    BillingWorker.all_execute
+    expect(ActionMailer::Base.deliveries.size).to eq(1)
+    expect(ActionMailer::Base.deliveries[0].body.raw_source).to match(/ビリングワーカー 完了/)
+    expect(ActionMailer::Base.deliveries[0].body.raw_source).to match(/PLAN_ID: #{plan.id}, TYPE: #{plan.type}/)
+    ActionMailer::Base.deliveries.clear
+
+    click_link '設定'
+
+    #-----------------
+    #  DB登録確認
+    #-----------------
+    expect(user.reload.referrer).to eq referrer
+    expect(user.referral_reason).to eq 'coupon'
+    expect(user.coupons.first).to eq coupon
+
+    expect(user.billing.payment_method).to eq 'credit'
+
+    # monthly_history 変化がないこと
+    expect(user.monthly_histories.reload.size).to eq 3
+    expect(MonthlyHistory.find_around(user).reload.updated_at).to eq last_his_updated_at
+
+    # current_planの変更チェック
+    expect(user.billing.plans.reload.size).to eq 1
+    plan = user.billing.current_plans.reload[0]
+    expect(plan.name).to eq 'β版スタンダードプラン'
+    expect(plan.price).to eq 4000
+    expect(plan.type).to eq 'monthly'
+    expect(plan.charge_date).to eq charge_date
+    expect(plan.status).to eq 'ongoing'
+    expect(plan.start_at).to eq start_at
+    expect(plan.end_at).to be_nil
+    expect(plan.trial).to be_falsey
+    expect(plan.next_charge_date).to eq Time.zone.now.next_month.to_date
+    expect(plan.last_charge_date).to eq Time.zone.now.to_date
+    plan_updated_at = plan.updated_at
+
+    # billing_histories 増加すること
+    expect(user.billing.histories.reload.size).to eq 1
+    b_his = user.billing.histories.last
+    expect(b_his.item_name).to eq 'β版スタンダードプラン'
+    expect(b_his.payment_method).to eq 'credit'
+    expect(b_his.price).to eq 4000
+    expect(b_his.billing_date).to eq Time.zone.today
+    expect(b_his.unit_price).to eq 4000
+    expect(b_his.number).to eq 1
+    last_b_his_updated_at = b_his.updated_at
+
+    # 期限日
+    expect(user.reload.expiration_date).to eq (Time.zone.now.next_month - 1.day).end_of_day
+    expect(user.next_planned_expiration_date).to be_nil
+
+    #-----------------
+    #  PAYJP 課金確認
+    #-----------------
+    payjp_res = user.billing.get_charges
+    # 課金
+    expect(payjp_res.count).to eq 1
+    expect(payjp_res.data[0].amount).to eq 4000
+    expect(payjp_res.data[0].customer).to eq user.billing.reload.customer_id
+    expect(Time.at(payjp_res.data[0].created)).to be > real_time_now - 2.minute
+
+
+    #-----------------
+    #  画面の確認
+    #-----------------
+    expect(page).to have_selector('h1', text: 'アカウント設定')
+
+    within '#change_plan_card' do
+      expect(page).to have_selector('.card-title-band', text: '課金プラン、カード情報の変更')
+
+      expect(page).to have_content '課金プラン、カード情報の変更はこちら'
+    end
+
+    within '#current_status' do
+      expect(page).to have_selector('.card-title-band', text: '現在の利用状況')
+
+      expect(page).to have_content '現在のプラン'
+      expect(page).to have_content 'β版スタンダードプラン'
+      expect(page).not_to have_content 'Rspecテスト スタンダードプラン'
+
+      expect(page).to have_content '課金状況'
+      expect(page).to have_content 'お支払い済み'
+      expect(page).not_to have_content 'お試し利用中'
+      expect(page).not_to have_content '有効期限'
+      expect(page).to have_content "次回課金日　　　#{user.expiration_date.tomorrow.strftime("%Y年%-m月%-d日")}"
+      expect(page).not_to have_content '次回更新日'
+
+      expect(page).to have_content "今月の実行回数　　　　　　0/30"
+      expect(page).to have_content "今月の取得件数　　　　　　0/5,000"
+      expect(page).to have_content "今月の簡易調査依頼回数　　0/3"
+    end
+
+    within '#billing_history' do
+      expect(page).to have_selector('.card-title-band', text: '課金、請求履歴')
+
+      expect(page).to have_content '今月の課金金額'
+      check_billing_data_row_in_configure_page(1)
+      check_billing_data_row_in_configure_page(2, user.billing.histories[0])
+      expect(page).to have_selector('a', text: '過去の課金、請求履歴')
+    end
+
+    within '#cancel_account_box' do
+      expect(page).to have_selector('.card-title-band', text: '退会する')
+
+      expect(page).to have_content I18n.t('you_can_cancel_account_after_stop_subscription')
+      expect(page).not_to have_selector('button', text: '退会')
+    end
+
+
+    click_link '過去の課金、請求履歴'
+
+    expect(page).to have_selector('h1', text: '過去の課金、請求履歴')
+
+    within '#history_months' do
+      expect(page).to have_selector('h4', text: '課金月')
+      expect(page).to have_selector("input[value='#{Time.zone.now.strftime("%Y年%-m月")}']")
+      expect(page).not_to have_selector("input[value='#{(Time.zone.now - 1.month).strftime("%Y年%-m月")}']")
+    end
+
+    within '#billing_data' do
+      expect(page).to have_selector('.card-title-band', text: "#{Time.zone.now.strftime("%Y年%-m月")} 課金情報")
+      expect(page).not_to have_selector('a#invoice_download', text: '請求書')
+
+      within '#billing_data_table' do
+        check_billing_data_row_in_payment_histories_page(1)
+        check_billing_data_row_in_payment_histories_page(2, user.billing.histories[0])
+      end
+    end
+
+    click_link '設定'
+    click_link '課金プラン、カード情報の変更はこちら'
+
+    expect(page).to have_selector('h1', text: 'プラン、カード情報変更')
+
+    within '#change_card' do
+      expect(page).to have_selector('.card-title-band', text: 'カード情報の変更')
+
+      expect(page).to have_content '現在の登録カード'
+      expect(page).to have_content 'Visa'
+      expect(page).to have_content '4242'
+
+      expect(page).to have_selector('#payjp_checkout_box input[value="カード変更"]')
+    end
+
+    within '#modify_plan' do
+      expect(page).to have_selector('.card-title-band', text: 'プラン変更')
+
+      expect(page).to have_content 'お手数ですが、 お問い合わせフォーム よりお申し出ください。'
+    end
+
+    within '#stop_plan' do
+      expect(page).to have_selector('.card-title-band', text: '課金停止')
+      expect(page).not_to have_selector('.card-title-band', text: '課金停止（お試し利用の解約）')
+
+      expect(page).to have_content '課金を停止後、有効期限内は同プランでご使用できます。有効期限後から、無料プランユーザとなります。'
+      expect(page).to have_content 'また、有効期限内はプラン変更、および、プラン再登録は受け付けられなくなります。'
+      expect(page).to have_content "有効期限: #{user.expiration_date.strftime("%Y年%-m月%-d日")}"
+
+      expect(page).to have_selector('#stop_subscription', text: '課金停止')
+
+      fill_in 'password_for_plan_stop', with: password
+
+      find('#stop_subscription', text: '課金停止').click
+
+      page.driver.browser.switch_to.alert.accept
+    end
+
+    sleep 0.5 # これがないと、エラーが発生する。Capybara::ElementNotFound: Unable to find xpath "/html"
+    page.source # これがないと、エラーが発生する。Capybara::ElementNotFound: Unable to find xpath "/html"
+
+    expect(page).to have_content '課金停止が完了しました。'
+
+    
+    expect(page).to have_selector('h1', text: 'アカウント設定')
+
+    expect(page).not_to have_selector('.card-title-band', text: '課金プラン、カード情報の変更')
+    expect(page).not_to have_content '課金プラン、カード情報の変更はこちら'
+
+    within '#current_status' do
+      expect(page).to have_selector('.card-title-band', text: '現在の利用状況')
+
+      expect(page).to have_content '現在のプラン'
+      expect(page).to have_content 'β版スタンダードプラン'
+      expect(page).not_to have_content 'Rspecテスト スタンダードプラン'
+
+      expect(page).to have_content '課金状況'
+      expect(page).to have_content 'お支払い済み、課金停止済み'
+      expect(page).not_to have_content 'お試し利用中'
+      expect(page).to have_content "有効期限　　　　#{user.expiration_date.strftime("%Y年%-m月%-d日")}"
+      expect(page).not_to have_content '次回課金日'
+      expect(page).not_to have_content '次回更新日'
+
+      expect(page).to have_content "今月の実行回数　　　　　　0/30"
+      expect(page).to have_content "今月の取得件数　　　　　　0/5,000"
+      expect(page).to have_content "今月の簡易調査依頼回数　　0/3"
+    end
+
+    within '#billing_history' do
+      expect(page).to have_selector('.card-title-band', text: '課金、請求履歴')
+
+      expect(page).to have_content '今月の課金金額'
+      check_billing_data_row_in_configure_page(1)
+      check_billing_data_row_in_configure_page(2, user.billing.histories[0])
+      expect(page).to have_selector('a', text: '過去の課金、請求履歴')
+    end
+
+    within '#cancel_account_box' do
+      expect(page).to have_selector('.card-title-band', text: '退会する')
+
+      expect(page).not_to have_content I18n.t('you_can_cancel_account_after_stop_subscription')
+      expect(page).to have_selector('button', text: '退会')
+    end
+  end
+end

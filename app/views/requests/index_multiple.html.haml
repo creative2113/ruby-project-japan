@@ -1,0 +1,403 @@
+= javascript_include_tag 'csv_parse.js'
+= javascript_include_tag 'requests.js'
+= javascript_include_tag 'https://unpkg.com/xlsx/dist/xlsx.full.min.js'
+
+.container
+  = render partial: 'layouts/notice'
+
+  = render partial: 'layouts/top_notice'
+
+  %h1.page_main_title
+    企業HP情報の取得
+    - if @init == '4'
+      %br
+      (企業DBを利用)
+
+  - if !@accepted && !@result
+    .slide.mb-3
+      = image_tag 'top_multi_company_sites_banner_1_2x.png'
+      = image_tag 'top_multi_company_sites_banner_2_2x.png'
+      = image_tag 'top_multi_company_sites_banner_3_2x.png'
+
+  - if @accepted
+    #accept.card-panel.with-title-band
+      .card-title-band リクエスト受領
+      検索リクエストを受付ました。
+      - unless user_signed_in?
+        結果は暫くしてから、以下の受付IDで下部の「リクエスト確認」から参照してください。
+      %table.request_result_summary.striped
+        %tbody
+        - unless user_signed_in?
+          %tr
+            %th 受付ID
+            %td= @accept_id
+        %tr
+          %th リスト名
+          %td= @title
+        - unless @mail_address.empty?
+          %tr
+            %th 完了通知メールアドレス
+            %td= @mail_address
+        %tr
+          %th 受付URL数
+          %td= @accept_count
+        %tr
+          %th 無効URL数
+          %td= @invalid_urls.size
+
+      - if @invalid_urls.size > 0
+        %h3 無効URL一覧
+        = button_tag '全無効URL表示', id: :all_invalid_urls_display, class: 'display_part btn waves-effect waves-light'
+        = button_tag '無効URL一覧ダウンロード', id: :all_invalid_urls_downlad, class: 'btn waves-effect waves-light'
+        %table#part_invalid_urls_table.striped
+          %tbody
+            %tr
+              %th 行数
+              %th URL
+              %th 理由
+            %div
+              - @invalid_urls.each_with_index do |url_content, i|
+                - break if i > 19
+                - url_content = url_content.symbolize_keys
+                %tr
+                  %td= "#{url_content[:index]}行目"
+                  %td= url_content[:url]
+                  %td= url_content[:reason]
+        %table#all_invalid_url_table.striped{style: 'display:none;'}
+          %tbody
+            %tr
+              %th 行数
+              %th URL
+              %th 理由
+            %div
+              - @invalid_urls.each do |url_content|
+                - url_content = url_content.symbolize_keys
+                %tr
+                  %td= "#{url_content[:index]}行目"
+                  %td= url_content[:url]
+                  %td= url_content[:reason]
+
+  - if @result
+    #confirm_request_form.card-panel.with-title-band
+      .card-title-band リクエスト確認
+      - unless @notice_confirm.nil?
+        .notice-msg= @notice_confirm
+
+      - if !user_signed_in?
+        受付IDからリクエスト結果を確認する
+        = form_tag(confirm_path, method: :get) do
+          .row
+            .input-field.col.s4.no_padding
+              = text_field_tag :accept_id, @accept_id
+              = label_tag :accept_id, '受付ID'
+          %button#confirm.btn.waves-effect.waves-light{type: "submit", name: "action"}
+            確認
+
+      = render partial: 'layouts/result_file_download'
+
+      %h3#confirm_request_form_result リクエスト
+      %table.request_result_summary.striped
+        %tbody
+          %tr
+            %th リスト名
+            %td= @title
+          %tr
+            %th リクエスト日時
+            %td= @requested_date
+          %tr
+            %th 現在のステータス
+            %td= @status
+          - unless @expiration_date.nil?
+            %tr
+              %th 結果DL有効期限
+              %td= @expiration_date
+          %tr
+            %th 全体数
+            %td.total_count= @total_count
+          %tr
+            %th 完了数
+            %td.completed_count= @completed_count
+          - if @waiting_count != 0
+            %tr
+              %th 未完了数
+              %td.waiting_count= @waiting_count
+          - if @error_count != 0
+            %tr
+              %th 失敗数
+              %td.error_count= @error_count
+
+      - if @req.company_db_search?
+        %h3.margin-top-bottom 設定
+        #confirm_request_form_crawl_config_list_area
+          %h5 地域の設定
+          .areas_config_area.scroll.margin-top-bottom
+            - @db_areas.each do |area|
+              .ml-4.mt-2= area
+          %h5 業種の設定
+          .categories_config_area.scroll.margin-top-bottom
+            - @db_categories.each do |category|
+              .ml-4.mt-2= category
+          %h5 その他の設定
+          .other_settings_area.scroll.margin-top-bottom
+            - if @not_own_capitals && get_current_user.administrator?
+              .ml-4 まだ資本金調査を終えてないデータに限る
+            .row
+              - if @db_capitals.present?
+                .col.s4
+                  %h6.ml-4 資本金の設定
+                  .capital_area.margin-top-bottom.ml-4
+                    - @db_capitals.each do |capital|
+                      .ml-4.mt-2= capital
+              - if @db_employee.present?
+                .col.s4
+                  %h6.ml-4 従業員数の設定
+                  .employee_area.margin-top-bottom.ml-4
+                    - @db_employee.each do |employee|
+                      .ml-4.mt-2= employee
+              - if @db_sales.present?
+                .col.s4
+                  %h6.ml-4 売上の設定
+                  .sales_area.margin-top-bottom.ml-4
+                    - @db_sales.each do |sales|
+                      .ml-4.mt-2= sales
+
+  #request_form.card-panel.with-title-band
+    .card-title-band 企業HP情報の取得リクエスト送信
+
+    = form_tag(request_path, method: :post, multipart: true, id: :upload_form) do
+      = hidden_field_tag 'mode', :multiple
+
+      - unless @notice_create_msg.nil?
+        .notice-msg= @notice_create_msg
+
+      - if user_signed_in?
+        %br
+        登録したメールアドレスにもお知らせをいたします。
+        %br
+      .col.s12.no_padding
+        .row
+          .input-field.col.s6
+            = email_field :request, :mail_address, { 'data-signed-in' => user_signed_in? ? '1' : '0' }
+            = label :request, :mail_address, 'メールアドレス（取得完了をメールでお知らせいたします。）'
+        %span#validate_msg.alert-msg
+
+      - if user_signed_in?
+        #storage.col.s12.no_padding
+          %p
+            %label
+              = check_box :request, :use_storage
+              %span 保存されているデータがあれば使う
+          #using_storaged_date_condition{style: 'display:none;'}
+            .row
+              .input-field.col.s2
+                = text_field :request, :using_storage_days, placeholder: '1 - 9999'
+                %span#storage_condition_validate_msg.alert-msg
+              .continuous-text
+                日前の取得データなら使う(空欄で特に指定しない)
+
+      - unless user_signed_in?
+        %br
+        .col.s12.mt-2
+          %span.emphasis-text
+            ※ 本サービスを実行される場合は、
+            = link_to 'サービス利用規約', '/information#terms_of_service', target: :_blank
+            %span に同意したものとみなします。
+            %br
+            ※ 本サービスは完全無料でご利用いただけます。
+
+      .col.s12.no_padding.center.margin-top-bottom
+        %button#request.btn-large.waves-effect.waves-light.accent{type: "submit", name: "action"}
+          リクエスト送信
+          %i.material-icons.right send
+
+      .text-1.icon-with-text
+        %br
+        %i.material-icons arrow_downward
+        .ml-1 次の4つの中から、URL情報の指定方法を選んでください。
+
+      #swich_type.middle-band{'data-init' => @init}
+        %ul.tabs
+          %li.tab.col.s3
+            %a#switch_file_type.active{href: "#list_upload_form"} ファイルアップロード
+          %li.tab.col.s3
+            %a#switch_make_list_type{href: "#request_form_making_url_list"} URLリスト作成
+          %li.tab.col.s3
+            %a#switch_word_search_type{href: "#request_form_word_search"} キーワード検索
+          %li.tab.col.s3
+            %a#switch_db_search_type{href: "#request_form_company_db_search"} 企業DBから検索
+
+      #list_upload_form.middle-band-margin.selected
+        .alert-msg.icon-with-text.mt--2
+          %i.material-icons info
+          .ml-1
+            企業HPのURLリストを持っていない方は「
+            = link_to '企業DBから検索', '', id: 'to_db_search'
+            」をお試しください。
+        %h3 URLリストをアップロード
+        企業HPのURLリストをアップロードしてください。
+        %br
+        エクセル または CSV
+        %br
+        .file-field.input-field
+          .btn
+            %span ファイルアップロード
+            = file_field :request, :excel, id: 'file_upload', accept: '.csv,.xlsx'
+          .file-path-wrapper
+            %input.file-path.validate
+        %span#upload_validate_msg.alert-msg
+
+        #excel_display{style: 'display:none;'}
+          #sheet_select.col.s12.separate
+            .col.s6
+              #sheet_select_msg シートを選択してください
+              #sheet_select_area
+
+          #header.col.s12.separate
+            ヘッダー行の有無
+            %br
+            %label
+              = check_box_tag :header
+              %span ヘッダー行あり
+
+          #colselect.separate
+            URL列を選択してください
+            #col_select.col.s12
+              #col_select_area
+
+      #request_form_making_url_list.middle-band-margin
+        %h3 URLリスト作成
+        キーワードで検索して、検索結果からURLリストを作成することができます。
+        %br
+        ① まずは検索キーワードを入力してください。直後に検索結果が表示されますので、クロールしたいサイトをクリックで指定してください。
+        %br
+        ② サイトを指定したら、次の検索キーワードを入力し、次のサイトをクリックして選んでください。
+        %br
+        %span.alert-msg ページを更新するとやり直しになりますので、ご注意下さい。
+        - if user_signed_in?
+          .col.s12
+            .input-field.col.s6
+              = text_field_tag :file_name
+              = label_tag :file_name, 'リスト名(作成するリストに名前をつけてください)'
+        .col.s12
+          .input-field.col.s6
+            = text_field_tag :keyword
+            = label_tag :keyword, '検索キーワード'
+        %p#find_candidate_urls_msg.alert-msg
+        %p#finding_candidate_urls.alert-msg.blinking{style: 'display:none;'} 候補URLを検索しています。少々、お待ちください。
+        #candidate_urls.col.s12
+
+        %h3 作成したURLリスト
+        %table#urls_table.striped
+          - if get_current_user.available?(:download_made_url_list)
+            %button#made_url_list_downlad.btn.waves-effect.waves-light{type: 'button'} URLリストダウンロード
+          - else
+            = "#{Availability.available_user(:download_made_url_list)}は作成したURLリストをダウンロードできます。"
+          %span#listCounter
+            登録可能件数
+            %span#excel_row_limit= excel_row_limit
+            件 / 残り
+            %span#rest_cout_to_limit= excel_row_limit
+            件
+            %span#making_url_list_invalid_msg
+          %tbody#list_table_part
+            %tr
+              %th 削除
+              %th URL
+              %th タイトル
+        #hidden_url_table{style: 'display:none;'}
+
+      #request_form_word_search.middle-band-margin
+        %h3 キーワード検索
+        キーワードでGoogle検索をして、検索結果で表示されたサイトを上から順番にクロールします。
+        %br
+        ここでは検索結果は表示されません。
+        %br
+        例えば、「東京都 食品製造業」、「大阪 IT企業」、「名古屋 中小企業」などです。
+        .col.s12
+          .input-field.col.s6
+            = text_field_tag :keyword_for_word_search
+            = label_tag :keyword_for_word_search, '検索キーワード'
+
+      #request_form_company_db_search.middle-band-margin
+        %h3 企業DBから検索
+        .col.s12
+          ※ 情報をクロールをし直すため、リスト提供には時間がかかります。お急ぎの場合は、上記の「保存されているデータがあれば使う」にチェックして下さい。多少早く取得できます。
+          %br
+          ※ 件数通りにリストを提供できるわけではございません。サイトから取得できなければ、その分、提供件数は減少します。
+        - if user_signed_in?
+          .col.s12.mt-2
+            .input-field.col.s6
+              = text_field_tag :list_name
+              = label_tag :list_name, 'リスト名(作成するリストに名前をつけてください)'
+          - if get_current_user.administrator?
+            %label
+              = check_box :request, :not_own_capitals
+              %span まだ資本金調査を終えてないデータに限る
+
+        #plan_user_flag{ 'data-plan-user' => get_current_user.available?(:other_conditions_on_db_search) ? '1' : '0' }
+        #areas_categories_field
+
+
+  - if user_signed_in?
+    #requests
+      .card-panel.with-title-band
+        .card-title-band リクエスト一覧
+        - unless @notice_request_list_msg.nil?
+          .notice-msg= @notice_request_list_msg
+        - else
+          .alert-msg.icon-with-text
+            %i.material-icons error_outline
+            .ml-1 取得したデータは利用する前に情報が正しいか必ずご確認をお願いします。
+        %table.striped
+          %tr
+            %th.center.icon-with-text
+              結果DL
+              %a{title: '結果の見方', target: :_blank, href: '/operation_explanation.pdf#page=10', class: 'tooltip1'}
+                %i.material-icons.mt-1 help_outline
+                %div{class: "tooltip1-description"} 結果の見方
+            %th.center リクエスト名
+            %th.center リクエスト日時
+            %th.center ステータス
+            %th.center 詳細
+            %th.center 中止要求
+            %th.center 受付URL数
+            %th.center 完了数
+            %th.center エラー数
+            %th.center ダウンロード期限
+          - @requests.each do |req|
+            %tr
+              - if req.result_file_path.present? && !req.over_expiration_date?
+                %td.center= make_submit_button({icon: 'file_download'}, download_path, :get, {accept_id: req.accept_id, mode: :multiple}, '', 'btn waves-effect waves-effectves-light result_downlad')
+              - else
+                %td
+              %td= req.title
+              %td= req.requested_date
+              %td= req.get_status_string
+              %td.center= make_submit_button({icon: 'find_in_page'}, confirm_path, :get, {page: params[:page], accept_id: req.accept_id, mode: :multiple}, '', 'btn waves-effect waves-light')
+              - if req.status >= EasySettings.status.completed
+                %td
+              - else
+                %td.center= make_submit_button({icon: 'stop'}, request_stop_path, :put, {page: params[:page], accept_id: req.accept_id, mode: :multiple}, '', 'btn waves-effect waves-light')
+              %td.accepted_count= req.accepted_url_count
+              %td.completed_count= req.get_completed_urls.company_info_urls.size
+              %td.error_count= req.get_error_urls.company_info_urls.size
+              %td.downloadable_limit_date= req.get_expiration_date
+        .col.s12
+          レコードは完了から1ヶ月で削除されます。
+        .col.s12.center
+          != pagy_nav(@pagy)
+  - else
+    - unless @result
+      #confirm_request_form.card-panel.with-title-band
+        .card-title-band リクエスト確認
+        - unless @notice_confirm.nil?
+          .notice-msg= @notice_confirm
+
+        受付IDからリクエスト結果を確認する
+        = form_tag(confirm_path, method: :get) do
+          .row
+            .input-field.col.s4.no_padding
+              = text_field_tag :accept_id, @accept_id
+              = label_tag :accept_id, '受付ID'
+          %button#confirm.btn.waves-effect.waves-light{type: "submit", name: "action"}
+            確認

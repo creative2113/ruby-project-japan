@@ -1,0 +1,22 @@
+default: &default
+  :verbose: false
+  :pidfile: ./tmp/pids/sidekiq.pid # 使われていない Syslogで吐かれる
+  :logfile: ./log/sidekiq.log      # 使われていない Syslogで吐かれる
+  :queues:
+    - [ make_result, 10 ]
+
+development:
+  <<: *default
+  :concurrency: 1
+
+test:
+  <<: *default
+  :concurrency: 1
+
+dev:
+  <<: *default
+  :concurrency: 1
+
+production:
+  <<: *default
+  :concurrency: 1

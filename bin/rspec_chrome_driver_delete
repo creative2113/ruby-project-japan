@@ -1,0 +1,22 @@
+#!/usr/bin/env ruby
+
+last_pid = `ps -ef | awk '{ print $2 }'`.split[-1]
+
+puts `bundle exec bin/my-rspec-queue #{ARGV[0]}`
+
+# 余分なchromediriver、Google Chrome、Google Chrome Helperを消す
+chromedriver_pids = `ps -ef | grep "chromedriver" | grep -v grep | awk '{ print $2 }'`.split
+
+chrome_pids = `ps -ef | grep "Google Chrome" | grep -v grep | grep -v "Google Chrome Helper" | awk '{ print $2 }'`.split
+
+chromedriver_pids.each do |chd_pid|
+  next if last_pid > chd_pid
+
+  `kill #{chd_pid}`
+  chrome_pids.each do |ch_pid|
+    if chd_pid < ch_pid
+      `kill #{ch_pid}`
+      break
+    end
+  end
+end

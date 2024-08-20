@@ -1,0 +1,36 @@
+- if user_signed_in?
+  - if @fail_reason.blank? || @fail_reason.include?('取得(クロール)に失敗しました。')
+    %br
+    %h4.icon-with-text.cursor-pointer.expand_toggle_switch.margin-top-bottom.pt-2.pb-2.pr-1
+      %i.material-icons.expand_toggle_icon expand_more
+      情報を取得できなかったユーザ様へ
+    #simple_investigation_request.expand_toggle_area{style: 'display: none;'}
+      ご期待に添えず大変申し訳ございません。
+      %br
+      運営側において、原因の簡易調査と裏側の簡易設定を行うことで、取得できなかった情報も取得できる可能性がございます。取得精度はさらに高くなります。
+      %br
+      = "毎月#{EasySettings.simple_investigation_limit[current_user.my_plan]}回まで無料で簡易調査と設定を依頼できます。"
+      %br
+      - remained_count = EasySettings.simple_investigation_limit[current_user.my_plan] - current_user.current_history.simple_investigation_count
+      - unless SimpleInvestigationHistory.find_by_request_id(@req.id).present?
+        = form_with url: simple_investigation_path, method: :put, local: false, id: 'simple_investigation_form' do |f|
+          = hidden_field_tag 'accept_id', @accept_id
+          = hidden_field_tag 'url', @corporate_list_site_start_url
+          %button#simple_investigation_submit.btn.waves-effect.waves-light.mt-2{type: "submit", name: "submit_button", disabled: remained_count <= 0 }
+            簡易調査と設定の申し込み
+      - else
+        %button.btn.waves-effect.waves-light.mt-2.mb-4{type: "submit", name: "submit_button", disabled: true }
+          既に依頼済みです
+      %br
+      .scroll
+        %table.request_result_summary.striped
+          %tbody
+            %tr
+              %th{class: remained_count <= 0 ? 'alert-msg' : '' } 残りご利用可能数
+              %td{class: remained_count <= 0 ? 'alert-msg' : '' }= "#{remained_count}回"
+            %tr
+              %th 調査対象URL
+              %td.scroll
+                = @corporate_list_site_start_url
+      #simple_investigation_response
+      %br

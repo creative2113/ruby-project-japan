@@ -1,0 +1,644 @@
+= javascript_include_tag 'csv_parse.js'
+= javascript_include_tag 'requests.js'
+= javascript_include_tag 'https://unpkg.com/xlsx/dist/xlsx.full.min.js'
+
+.container
+  = render partial: 'layouts/notice'
+
+  = render partial: 'layouts/top_notice'
+
+  %h1.page_main_title 企業一覧サイトからの収集
+
+  - if !@accepted && !@result
+    .slide
+      = image_tag 'top_manufacture_company_list_banner_2x.png'
+      = image_tag 'top_group_company_list_banner_2x.png'
+      = image_tag 'top_fukuoka_company_list_banner_2x.png'
+
+
+  - if !user_signed_in? && !@accepted && !@result
+    %section#welcome
+      .title= "ようこそ、#{EasySettings.service_name}へ"
+      .welcome-wrapper
+        %p= "#{EasySettings.service_name}へお越しいただきありがとうございます。当サービスは世界一分かりやすく、使いやすいWEBクローラ、WEBスクレイピングツールを目指して開発を進めて参りました。"
+        %p 世の中に見られる類似サービスには操作や設定が煩雑なものも多かったり、英語のツールばかりで日本語ツールが少なかったりと導入にハードルが高いツールも多いという現状があります。
+        %p
+          当サービスは誰でも簡単に使えるスクレイピングツールとなっており、
+          %span 1.URLを入力し
+          、
+          %span 2.開始をクリックする
+          、この2ステップで操作は完結し、あとはコンピュータが自動で判断して必要な情報を取得してきます。その簡単さを追求することは非常に困難で、開発も難航してきましたが、ようやくサービスをβ版としてオープすることができました。実際のところ、まだ取得できないサイトもありますが、どんなサイトでも対応できるように今後も開発を継続して参ります。
+        %p 数ヶ月を目処にβ版として運用したします。もしご意見、ご感想やご声援、また、情報を取得できなかったサイトのご報告など、お問合せページより頂けましたら幸いでございます。
+        %p= "今後とも#{EasySettings.service_name}を末長く宜しくお願い申し上げます。"
+
+  - if @accepted
+    #accept.card-panel.with-title-band
+      .card-title-band リクエスト受領
+      検索リクエストを受付ました。
+      - unless user_signed_in?
+        結果は暫くしてから、以下の受付IDで下部の「リクエスト確認」から参照してください。
+      %table.request_result_summary.striped
+        %tbody
+        - unless user_signed_in?
+          %tr
+            %th.center.icon-with-text
+              受付ID
+              %a{target: :_blank, href: '/operation_explanation.pdf#page=4'}
+                %i.material-icons.mt-1 help_outline
+            %td= @accept_id
+        %tr
+          %th リクエスト名
+          %td= @title
+        %tr
+          %th 実行の種類
+          %td= execution_type(@test)
+        - unless @mail_address.blank?
+          %tr
+            %th 完了通知メールアドレス
+            %td= @mail_address
+
+  - if @result
+    #confirm_request_form.card-panel.with-title-band
+      .card-title-band リクエスト確認
+      - unless @notice_confirm.nil?
+        .notice-msg= @notice_confirm
+
+      - unless user_signed_in?
+        受付IDからリクエスト結果を確認する
+        = form_tag(confirm_path, method: :get) do
+          .row
+            .input-field.col.s4.no_padding
+              = text_field_tag :accept_id, @accept_id
+              = label_tag :accept_id, '受付ID'
+          %button#confirm.btn.waves-effect.waves-light{type: "submit", name: "action"}
+            確認
+
+      = render partial: 'layouts/result_file_download'
+
+      %h3.margin-top-bottom リクエスト
+      .test_confirm_area.scroll
+        %table.request_result_summary.striped.config-1
+          %tbody
+            %tr
+              %th リクエスト名
+              %td= @title
+            %tr
+              %th 企業一覧サイトのURL
+              %td= @corporate_list_site_start_url
+            %tr
+              %th リクエスト日時
+              %td= @requested_date
+            %tr
+              %th 実行の種類
+              %td= execution_type(@test)
+            %tr
+              %th 現在のステータス
+              %td= @status
+            - if @fail_reason.present?
+              %tr
+                %th 結果
+                %td 取得失敗
+              %tr
+                %th 失敗理由
+                %td= @fail_reason
+            - unless @test
+              - unless @expiration_date.nil?
+                %tr
+                  %th 結果DL有効期限
+                  %td= @expiration_date
+              %tr
+                %th 全体数
+                %td= @req.total_count_decided? ? @total_count : '未定'
+              %tr
+                %th 完了数
+                %td= @completed_count
+              - if @waiting_count != 0
+                %tr
+                  %th 未完了数
+                  %td= @waiting_count
+              - if @error_count != 0
+                %tr
+                  %th 失敗数
+                  %td= @error_count
+      %h3#confirm_request_form_config.margin-top-bottom 設定
+      %table.request_result_summary.striped.config-2
+        %tbody
+          %tr
+            %th 完了通知メールアドレス
+            %td= @req.mail_address
+          %tr
+            %th 保存データがあれば使うか
+            %td= @req.use_storage ? "使う(#{storage_days(@req.using_storage_days)})" : '使わない'
+          %tr
+            %th ページ遷移の設定
+            %td= paging_mode(@req)
+      - if @list_config.present? || @indiv_config.present?
+        %h3#confirm_request_form_crawl_config.margin-top-bottom クロール詳細設定
+        #confirm_request_form_crawl_config_list_area
+          %h5 企業一覧ページの設定
+          - if @list_config.present?
+            .test_confirm_area.scroll.margin-top-bottom
+              - @list_config.each do |num, config|
+                .row{data: num}
+                  .col.s12.emphasis-text.margin-top-bottom 企業一覧ページのサンプルURL
+                  .col.s12
+                    %table.striped
+                      %tbody
+                        %tr
+                          %td= config['url']
+                  - if config['organization_name'].present?
+                    .col.s12.emphasis-text.margin-top-bottom ページに記載されている会社名のサンプル(または、 サンプル会社名のXパス)
+                    .col.s12
+                      %table.striped
+                        %tbody
+                          %tr
+                            %th 会社名1 または そのXパス
+                            %th 会社名2 または そのXパス
+                            %th 会社名3 または そのXパス
+                            %th 会社名4 または そのXパス
+                          %tr
+                            %td= config['organization_name']['1']
+                            %td= config['organization_name']['2']
+                            %td= config['organization_name']['3']
+                            %td= config['organization_name']['4']
+                  - if config['contents'].present?
+                    .col.s12.emphasis-text.margin-top-bottom 取得したい情報の種別名とページに記載されているサンプル文字(または、 そのXパス)
+                    .col.s12
+                      %table.striped
+                        %tbody
+                          %tr
+                            %th 種別名 または そのXパス
+                            %th サンプル文字1 または そのXパス
+                            %th サンプル文字2 または そのXパス
+                            %th サンプル文字3 または そのXパス
+                          - config['contents'].each do |num, content|
+                            %tr{data: "con_#{num}"}
+                              %th= content['title']
+                              %td= content['text']['1']
+                              %td= content['text']['2']
+                              %td= content['text']['3']
+                .divider.margin-top-bottom
+
+        #confirm_request_form_crawl_config_individual_area
+          %h5 企業個別ページの設定
+          - if @indiv_config.present?
+            .test_confirm_area.scroll.margin-top-bottom
+              - @indiv_config.each do |num, config|
+                .row{data: num}
+                  .col.s12.emphasis-text.margin-top-bottom 企業個別ページのサンプルURL
+                  .col.s12
+                    %table.striped
+                      %tbody
+                        %tr
+                          %td= config['url']
+                  - if config['organization_name'].present?
+                    .col.s12.emphasis-text.margin-top-bottom ページに記載されている会社名のサンプル(または、 サンプル会社名のXパス)
+                    .col.s12
+                      %table.striped
+                        %tbody
+                          %tr
+                            %th 会社名 または そのXパス
+                            %td= config['organization_name']
+                  - if config['contents'].present?
+                    .col.s12.emphasis-text.margin-top-bottom 取得したい情報の種別名とページに記載されているサンプル文字(または、 そのXパス)
+                    .col.s12
+                      %table.striped
+                        %tbody
+                          %tr
+                            %th 種別名 または そのXパス
+                            %th サンプル文字 または そのXパス
+                          - config['contents'].each do |num, content|
+                            %tr{data: "con_#{num}"}
+                              %th= content['title']
+                              %td= content['text']
+                .divider.margin-top-bottom
+      - if @test && @status == '完了' && @fail_reason.blank?
+        %h3.margin-top-bottom テストクロール結果
+        - if @corporate_list_result.present? && @headers.present?
+          %button#resize_table.btn.waves-effect.waves-light
+            全表示
+          .test_confirm_area.scroll.margin-top-bottom
+            %table#test_result.request_result_table_summary_fixed.striped
+              %tbody
+                %tr
+                  - @headers.each do |head|
+                    %th= head
+                - @corporate_list_result.each do |k, value|
+                  %tr
+                    - @headers.each do |head|
+                      %td
+                        - contents = display_test_result(value[head])
+                        - contents.each_with_index do |content, i|
+                          - if content.class == Array
+                            - content.each do |con|
+                              = con
+                          - else
+                            = content
+                          = '; ' if i < contents.size - 1
+
+          - if @separation_info.present?
+            %h4.margin-top-bottom.icon-with-text
+              仕切り情報の一覧
+              %a.font-main-color.icon-with-text.ml-1{target: :_blank, href: 'words_explanation.pdf#page=2'}
+                %i.material-icons help
+            %div 仕切り情報は取得精度が安定してません。内容をよく確認してください。必要な時はユーザ様ご自身で整形してください。
+            .test_confirm_area.scroll.margin-top-bottom
+              - @separation_info.each do |key, texts|
+                - if @separation_info.size > 1
+                  .emphasis-text= key
+                %table.request_result_table_summary.striped
+                  %tbody
+                    - texts.each do |text|
+                      %tr
+                        %td= text
+                %br
+          %br
+          取得結果をご覧になり、取得結果に問題がありましたら、設定項目を見直し、再度テストを行なってください。
+          %br
+          もし、問題ないようでしたら、本リクストを送信してください。
+
+        - else
+          取得できませんでした。
+          %br
+          %br
+          大変申し訳ございませんが、このサイトには対応していない可能性があります。
+          %br
+          設定やURLを変えて、何度かお試ししてみても取得できないようでしたら、このサイトは未対応の可能性が高いです。
+          %br
+        = render 'layouts/simple_investigation_request_form'
+
+        .row
+          .col.s2
+          .col.s3
+          .col.s2
+          .col.s3
+            .emphasis-text 完了目安：数時間〜数日
+          .col.s2
+        .row
+          .col.s2
+          .col.s3
+            = form_with url: request_corporate_reconfigure_path + "#request_form_part", method: :get, local: true do |f|
+              = hidden_field_tag 'accept_id', @accept_id
+              %button.btn-large.waves-effect.waves-light.accent{type: "submit", name: "submit_button"}
+                再設定
+                %i.material-icons.right send
+          .col.s2
+          .col.s3
+            = form_with url: request_main_corporate_path, method: :put, local: true do |f|
+              = hidden_field_tag 'accept_id', @accept_id
+              %button.btn-large.waves-effect.waves-light.accent{type: "submit", name: "submit_button"}
+                本リクエスト送信
+                %i.material-icons.right send
+          .col.s2
+      - else
+        = render 'layouts/simple_investigation_request_form'
+        %br
+        .row
+          .col.s5
+          .col.s2
+            = form_with url: request_corporate_reconfigure_path, method: :get, local: true do |f|
+              = hidden_field_tag 'accept_id', @accept_id
+              %button.btn-large.waves-effect.waves-light.accent{type: "submit", name: "submit_button"}
+                再設定
+                %i.material-icons.right send
+          .col.s5
+
+
+  #request_form_part.card-panel.with-title-band.mt-4
+    .card-title-band
+      .col.s6 リクエスト送信
+      .col.s6.right
+        %a.white-text.right{target: :_blank, href: 'operation_explanation.pdf'}
+          %i.material-icons.bigger help
+          .ml-1 操作説明
+
+    = form_tag(request_path, method: :post, multipart: true, id: :request_form) do
+      - unless @notice_create_msg.nil?
+        .notice-msg= @notice_create_msg
+
+      #request_form_corporate_list_site.selected
+        .col.s12
+          こちらの機能はまだ、ベータ版であり、取得できないサイトも多くございますので、ご了承ください。
+        .col.s12
+          .cursor-pointer.icon-with-text-left.mt-1.p-1.expand_toggle_switch.expand_list_on_request
+            %i.material-icons.expand_toggle_icon expand_more
+            取得確認済みサイト
+          .confirmed_list_area.expand_toggle_area{style: 'display: none;'}
+            = render 'layouts/confirmed_list_site_index'
+        .col.s12
+          .cursor-pointer.icon-with-text-left.p-1.expand_toggle_switch.expand_list_on_request
+            %i.material-icons.expand_toggle_icon expand_more
+            お試しサイト
+          .expand_toggle_area.text-size-15{style: 'display: none;'}
+            %ul
+              %li.mt-1
+                .exec_sample.btn.waves-effect.waves-light{ data: 'https://hachioji.or.jp/kogyo/index.shtml' } お試し実行
+                .ml-1.btn.waves-effect.waves-light=link_to '取得サンプル画像', '/hachioji_list_sample.png', target: :_blank, class: 'font-white'
+                %span.ml-1=link_to '八王子ものづくり製造業WEB検索サイト', 'https://hachioji.or.jp/kogyo/index.shtml', target: :_blank
+              %li.mt-1
+                .exec_sample.btn.waves-effect.waves-light{ data: 'https://nagasaki-workstyle.com/company/' } お試し実行
+                .ml-1.btn.waves-effect.waves-light=link_to '取得サンプル画像', '/nagasaki_list_sample.png', target: :_blank, class: 'font-white'
+                %span.ml-1=link_to '長崎市企業紹介サイト', 'https://nagasaki-workstyle.com/company/', target: :_blank
+              %li.mt-1
+                .exec_sample.btn.waves-effect.waves-light{ data: 'https://www.idec.or.jp/business/csr/chiikikouken-04list.html' } お試し実行
+                .ml-1.btn.waves-effect.waves-light=link_to '取得サンプル画像', '/yokohama_list_sample.png', target: :_blank, class: 'font-white'
+                %span.ml-1=link_to '公益法人横浜企業経営支援財団 認定企業一覧', 'https://www.idec.or.jp/business/csr/chiikikouken-04list.html', target: :_blank
+              %li.mt-1
+                .exec_sample.btn.waves-effect.waves-light{ data: 'https://www.olympus.co.jp/company/base/domestic.html?page=company' } お試し実行
+                .ml-1.btn.waves-effect.waves-light=link_to '取得サンプル画像', '/olympus_list_sample.png', target: :_blank, class: 'font-white'
+                %span.ml-1=link_to 'オリンパス グループ企業一覧', 'https://www.olympus.co.jp/company/base/domestic.html?page=company', target: :_blank
+              %li.mt-1
+                .exec_sample.btn.waves-effect.waves-light{ data: 'https://www.kirinholdings.com/jp/profile/organization/' } お試し実行
+                .ml-1.btn.waves-effect.waves-light=link_to '取得サンプル画像', '/kirinholdings_list_sample.png', target: :_blank, class: 'font-white'
+                %span.ml-1=link_to 'キリンホールディングス グループ会社一覧', 'https://www.kirinholdings.com/jp/profile/organization/', target: :_blank
+              %li.mt-1
+                .exec_sample.btn.waves-effect.waves-light{ data: 'https://www.hitachi.co.jp/about/corporate/group/index.html' } お試し実行
+                .ml-1.btn.waves-effect.waves-light=link_to '取得サンプル画像', '/hitachi_list_sample.png', target: :_blank, class: 'font-white'
+                %span.ml-1=link_to '日立グループ グループ会社一覧', 'https://www.hitachi.co.jp/about/corporate/group/index.html', target: :_blank
+
+        - unless user_signed_in?
+          #guide-msg.mt-4.icon-with-text
+            %i.material-icons arrow_downward
+            STEP 1   メールアドレスと企業一覧サイトのURLを入力してください
+          .col.s6.no_padding
+            .input-field
+              = email_field :request, :mail_address, value: val('', :request, :mail_address)
+              = label :request, :mail_address, 'メールアドレス（取得完了をメールでお知らせいたします。）'
+            %span#validate_msg.alert-msg
+        .col.s12.mt-2
+          .input-field
+            - request_url_placeholder = user_signed_in? ? '企業一覧サイトのURL' : '企業一覧サイトのURL（取得したい企業リスト一覧のあるページのURLをご指定下さい。）'
+            = text_field_tag 'request[corporate_list_site_start_url]', val('', :request, :corporate_list_site_start_url)
+            = label_tag 'request[corporate_list_site_start_url]', request_url_placeholder
+        .url_caution_toggle.icon-with-text-left.cursor-pointer.mt--2.p-1.expand_toggle_switch.expand_list_on_request
+          %i.material-icons.expand_toggle_icon expand_more
+          .alert-msg.icon-with-text-left
+            %i.material-icons warning
+            .ml-1.emphasis-text2 URLの注意事項
+        .mt-1.expand_toggle_area{style: 'display: none;'}
+          %li.ml-2
+            取得したい
+            %span.emphasis-text3 企業一覧が表示されているページ
+            のURLを入力してください。
+          %li.ml-2
+            リクナビ、タウンページなどの大きなサイトでは、
+            %span.emphasis-text3 検索して絞り込んだページのURL
+            を入力してください。
+          .image_box
+            = image_tag 'url_caution1.png'
+            = image_tag 'url_caution2.png'
+            = image_tag 'url_caution3.png'
+          %h6.ml-2 その他のサイトの注意事項
+          / %li.ml-6
+          /   %a{target: :_blank, href: 'rikunabi_next.pdf'} リクナビNEXTの注意事項
+          %li.ml-6
+            %a{target: :_blank, href: 'ecareer.pdf'} イーキャリアの注意事項
+
+      = hidden_field_tag 'request_type', :corporate_list_site
+      - unless user_signed_in?
+        %br
+        .row
+          %span.emphasis-text
+            ※ 本サービスを実行される場合は、
+            = link_to 'サービス利用規約', '/information#terms_of_service', target: :_blank
+            %span に同意したものとみなします。
+            %br
+            ※ 本サービスは完全無料でご利用いただけます。
+
+      %br
+      - if user_signed_in?
+        .row
+          .col.s2
+          .col.s3
+            先にテストで確認することをオススメします。
+          .col.s2
+          .col.s3
+          .col.s2
+        .row
+          .col.s2
+          .col.s3
+            .emphasis-text 完了目安：数分〜数時間
+          .col.s2
+          .col.s3
+            .emphasis-text= "完了目安：数時間〜数日"
+          .col.s2
+        .row
+          .col.s2
+          .col.s3
+            %button#request_test.btn-large.waves-effect.waves-light.accent{type: "submit", name: "submit_button"}
+              テストリクエスト送信
+              %i.material-icons.right send
+          .col.s2
+          .col.s3
+            %button#request_main.btn-large.waves-effect.waves-light.accent{type: "submit", name: "submit_button"}
+              本リクエスト送信
+              %i.material-icons.right send
+          .col.s2
+      - else
+        .row
+          .col.s4
+          .col.s4
+            #guide-msg.mt-1.icon-with-text
+              %i.material-icons arrow_downward
+              STEP 2 実行クリック
+          .col.s4
+        .row
+          .col.s4
+          .col.s4
+            .emphasis-text= "完了目安：数分〜数時間"
+          .col.s4
+        .row
+          .col.s4
+          .col.s4
+            %button#request_main.btn-large.waves-effect.waves-light.accent{type: "submit", name: "submit_button"}
+              リクエスト送信
+              %i.material-icons.right send
+          .col.s4
+
+      - if user_signed_in?
+        #option
+          %h3 オプション
+          .col.s12
+            .input-field
+              = text_field_tag 'request[title]', val('', :request, :title)
+              = label_tag 'request[title]', 'リクエスト名（作成するリクエストに任意の名前をつけてください）'
+          .col.s6.no_padding
+            .input-field
+              = email_field :request, :mail_address, value: val('', :request, :mail_address)
+              = label :request, :mail_address, 'メールアドレス（取得完了をメールでお知らせいたします）'
+            %span#validate_msg.alert-msg
+
+          #storage.col.s12.no_padding
+            %p
+              %label
+                = check_box :request, :use_storage, { checked: val('', :request, :use_storage) == '1' }
+                %span 保存されているデータがあれば使う
+            #using_storaged_date_condition{style: display(val('', :request, :use_storage) == '1') }
+              .row
+                .input-field.col.s2
+                  = text_field :request, :using_storage_days, placeholder: '1 - 9999', value: val('', :request, :using_storage_days)
+                  %span#storage_condition_validate_msg.alert-msg
+                .continuous-text
+                  日前の取得データなら使う(空欄で特に指定しない)
+          .col.s12
+            ページ遷移(移動)のルール
+          .col.s12.mb-1
+            .input-field.col.s6.ml-6
+              %span
+                %label
+                  = radio_button :request, :paging_mode, :normal, {checked: ['normal', ''].include?(val('', :request, :paging_mode)) }
+                  %span.click-target-for-spec 指定しない
+              %span.ml-7
+                %label
+                  = radio_button :request, :paging_mode, :only_this_page, {checked: val(false, :request, :paging_mode) == 'only_this_page'}
+                  %span.click-target-for-spec このページのみから収集する
+              %span.ml-7
+                %label
+                  .icon-with-text
+                    = radio_button :request, :paging_mode, :only_paging, {checked: val(false, :request, :paging_mode) == 'only_paging'}
+                    %span.click-target-for-spec ページ送りのみ行う
+                    %a.font-main-color.ml-1{target: :_blank, href: 'words_explanation.pdf'}
+                      %i.material-icons help
+
+        - if user_signed_in? && current_user.preferences&.advanced_setting_for_crawl
+          - detail_config_on = val('1', :detail_off) == '0'
+          %h3#add_deteil_configuration.cursor-pointer.mt-6
+            %i.material-icons.left= detail_config_on ? 'remove_circle' : 'add_circle'
+            より正確にクロールするための詳細設定
+
+          #detail_configuration{style: display(detail_config_on)}
+            .ml-2
+              - corporate_list_config_on = val('1', :request, :corporate_list, :config_off) == '0'
+              %h5#toggle_corporate_list_config.cursor-pointer.btn-toggle
+                %i.material-icons.left= add_icon(!corporate_list_config_on)
+                企業一覧ページの設定
+              #corporate_list_config{style: display(corporate_list_config_on) }
+                .ml-2 複数設定することで正確性が増します。
+                - config_cnt = 0
+                - if val(nil, :request, :corporate_list).present? && params[:request][:corporate_list].keys != ["config_off"]
+                  - params[:request][:corporate_list].each do |idx, v|
+                    - next if idx == 'config_off'
+                    = render partial: 'corporate_list', locals: { url_num: idx }
+                    - config_cnt += 1
+                - else
+                  = render partial: 'corporate_list', locals: { url_num: '1' }
+                  - config_cnt += 1
+
+                .row.input-field.ml-2
+                  %button#add_corporate_list_url_config.btn.waves-effect.waves-light.col.s1{type: 'button', class: disabled(config_cnt >= 5) }
+                    %i.material-icons.left add_circle_outline
+                    追加
+                  .col.s1
+                  %button#remove_corporate_list_url_config.btn.waves-effect.waves-light.col.s1{type: 'button', class: disabled(config_cnt == 1) }
+                    %i.material-icons.left remove_circle_outline
+                    削除
+              #corporate_list_config_off{style: display(!corporate_list_config_on) }
+                .ml-2 設定なし
+                = hidden_field_tag 'request[corporate_list][config_off]', val('1', :request, :corporate_list, :config_off)
+            %br
+            .ml-2
+              - corporate_individual_config_on = val('1', :request, :corporate_individual, :config_off) == '0'
+              %h5#toggle_corporate_individual_config.cursor-pointer.btn-toggle
+                %i.material-icons.left= add_icon(!corporate_individual_config_on)
+                企業個別ページの設定
+              #corporate_individual_config{style: display(corporate_individual_config_on) }
+                .ml-2 複数設定することで正確性が増します。サンプルURLは2つは入力することをお勧めします。
+                - config_cnt = 0
+                - if val(nil, :request, :corporate_individual).present? && params[:request][:corporate_individual].keys != ["config_off"]
+                  - params[:request][:corporate_individual].each do |idx, v|
+                    - next if idx == 'config_off'
+                    = render partial: 'corporate_individual', locals: { url_num: idx }
+                    - config_cnt += 1
+                - else
+                  = render partial: 'corporate_individual', locals: { url_num: '1' }
+                  - config_cnt += 1
+
+                .row.input-field.ml-2
+                  %button#add_corporate_individual_url_config.btn.waves-effect.waves-light.col.s1{type: 'button', class: disabled(config_cnt >= 5) }
+                    %i.material-icons.left add_circle_outline
+                    追加
+                  .col.s1
+                  %button#remove_corporate_individual_url_config.btn.waves-effect.waves-light.disabled.col.s1{type: 'button', class: disabled(config_cnt == 1) }
+                    %i.material-icons.left remove_circle_outline
+                    削除
+              #corporate_individual_config_off{style: display(!corporate_individual_config_on) }
+                .ml-2 設定なし
+                = hidden_field_tag 'request[corporate_individual][config_off]', val('1', :request, :corporate_individual, :config_off)
+            %br
+
+          #detail_configuration_off{style: display(!detail_config_on) }
+            設定なし
+            = hidden_field_tag 'detail_off', val('1', :detail_off)
+
+  - if user_signed_in?
+    #requests
+      .card-panel.with-title-band
+        .card-title-band リクエスト一覧
+        - unless @notice_request_list_msg.nil?
+          .notice-msg= @notice_request_list_msg
+        - else
+          .alert-msg.icon-with-text
+            %i.material-icons error_outline
+            .ml-1 取得したデータは利用する前に情報が正しいか必ずご確認をお願いします。
+        %table.striped
+          %tr
+            %th.center リクエスト名
+            %th.center リクエスト日時
+            %th.center 実行の種類
+            %th.center ステータス
+            %th.center 詳細
+            %th.center 中止要求
+            %th.center.icon-with-text
+              結果DL
+
+              %a{target: :_blank, href: '/operation_explanation.pdf#page=7', class: 'tooltip1'}
+                %i.material-icons.mt-1 help_outline
+                %div{class: "tooltip1-description"} 結果の見方
+            %th.center ダウンロード期限
+            %th.center 全体数
+            %th.center 完了数
+            %th.center 失敗数
+          - @requests.each do |req|
+            %tr
+              %td= req.title
+              %td= req.requested_date
+              %td= execution_type(req.test)
+              %td= req.get_status_string
+              %td.center= make_submit_button({icon: 'find_in_page'}, confirm_path, :get, {page: params[:page], accept_id: req.accept_id}, '', 'btn waves-effect waves-light')
+              - if req.status >= EasySettings.status.completed
+                %td
+              - else
+                %td.center= make_submit_button({icon: 'stop'}, request_stop_path, :put, {page: params[:page], accept_id: req.accept_id}, '', 'btn waves-effect waves-light')
+              - if req.result_file_path.present? && !req.over_expiration_date?
+                %td.center= make_submit_button({icon: 'file_download'}, download_path, :get, {accept_id: req.accept_id}, '', 'btn result_downlad waves-effect waves-effectves-light')
+              - else
+                %td
+              - if req.test
+                %td
+                %td
+                %td
+                %td
+              - else
+                %td= req.get_expiration_date
+                %td= req.total_count_decided? ? req.requested_urls.main.size : '未定'
+                %td= req.get_completed_urls.main.size
+                %td= req.get_error_urls.main.size
+        .col.s12
+          レコードは完了から1ヶ月で削除されます。
+        .col.s12.center
+          != pagy_nav(@pagy)
+  - else
+    - unless @result
+      #confirm_request_form.card-panel.with-title-band
+        .card-title-band リクエスト確認
+        - unless @notice_confirm.nil?
+          .notice-msg= @notice_confirm
+
+        受付IDからリクエスト結果を確認する
+        = form_tag(confirm_path, method: :get) do
+          .row
+            .input-field.col.s4.no_padding
+              = text_field_tag :accept_id, @accept_id
+              = label_tag :accept_id, '受付ID'
+          %button#confirm.btn.waves-effect.waves-light{type: "submit", name: "action"}
+            確認

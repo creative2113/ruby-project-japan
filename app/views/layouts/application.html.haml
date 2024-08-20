@@ -1,0 +1,28 @@
+!!!
+%html
+  %head
+    %meta{:content => "text/html; charset=UTF-8", "http-equiv" => "Content-Type"}/
+    = csrf_meta_tags
+    = csp_meta_tag
+    = stylesheet_link_tag    'https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css'
+    = stylesheet_link_tag    'https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100;400;700;900&display=swap'
+    = stylesheet_link_tag    'application', media: 'all'
+    = stylesheet_link_tag    'https://fonts.googleapis.com/icon?family=Material+Icons', media: 'all'
+    = javascript_include_tag 'application'
+    = javascript_include_tag 'materialize.min.js'
+
+    = analytics_init if Rails.env.production?
+
+    - if self.methods.include?(:default_meta_tags)
+      = display_meta_tags(default_meta_tags)
+
+    = render 'layouts/google_analytics' if Rails.env.production?
+
+  %body
+    = render 'layouts/header'
+    .loader{ style: 'display:none;' }
+      .loader-circle
+        .circle
+    .content
+      = yield
+    = render 'layouts/footer'

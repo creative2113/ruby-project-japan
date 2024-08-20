@@ -1,0 +1,37 @@
+ja:
+  activerecord:
+    models:
+      user: ユーザ
+
+    attributes:
+      user:
+        company_name: 企業名（正式名称・個人名や屋号）
+        family_name: 姓
+        given_name: 名
+        department: 部署
+        position: 役職
+        tel: 電話番号
+        terms_of_service: サービス利用規約
+        email: メールアドレス
+        password: パスワード
+        plan: 課金プラン
+        password_confirmation: 確認用パスワード
+        remember_me: 次回から自動的にログイン
+        current_password: 現在のパスワード
+
+    errors:
+      models:
+        user:
+          attributes:
+            password:
+              invalid_password_format: は英字、数字をそれぞれ1文字ずつ含めてください
+            terms_of_service:
+              agree_to: に同意してください
+  enum:
+    user:
+      position:
+        general_employee: 一般社員
+        section_chief: 課長/マネージャー
+        manager: 部長
+        board_member: 役員
+        ceo: 代表取締役/CEO

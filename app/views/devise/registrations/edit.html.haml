@@ -1,0 +1,140 @@
+= javascript_include_tag 'devise_registrations_edit.js'
+
+.container
+  .row
+    .col.s6.offset-s3.resposive-size
+      = render partial: 'layouts/notice'
+
+      %h1= t('edit_title')
+      - if current_user.scheduled_stop?
+      - elsif current_user.paid? || current_user.trial?
+        - if current_user.credit_payment?
+          #change_plan_card.card-panel.with-title-band
+            .card-title-band 課金プラン、カード情報の変更
+            %p= link_to t('change_card_or_subscription_plan'), payment_edit_path
+        - elsif current_user.bank_payment? || current_user.invoice_payment?
+          #change_plan_box.card-panel.with-title-band
+            .card-title-band 課金プランの変更
+            %p
+              お手数ですが、
+              = link_to 'お問い合わせフォーム', '/inquiry'
+              よりお申し出ください。
+      - else
+        = render "layouts/payment"
+
+      #current_status.card-panel.with-title-band
+        .card-title-band 現在の利用状況
+
+        %li= '現在のプラン　　' + ( current_user.current_plan_name )
+        %br
+        - unless ( bil_status = display_payment_status(current_user.billing) ) == '未課金'
+          %li= "課金状況　　　　#{bil_status}"
+          %br
+
+        - if current_user.bank_payment? || current_user.scheduled_stop? || current_user.trial?
+          %li= "有効期限　　　　#{display_date(current_user.expiration_date)}"
+          %br
+        - elsif ( current_user.credit_payment? || current_user.invoice_payment? ) && current_user.billing.current_plans.present?
+          %li= "次回課金日　　　#{display_date(current_user.billing.current_plans[0].next_charge_date)}"
+          %br
+
+        - if current_user.billing.next_enable_plan.present?
+          %br
+          %li= "次回のプラン　　#{current_user.billing.next_enable_plan.name}"
+          %li= "開始日　　　　　#{display_date(current_user.billing.next_enable_plan.start_at)}"
+          %br
+
+        %li= "今月の実行回数　　　　　　#{current_user.current_history&.request_count&.to_s(:delimited)}/#{EasySettings.monthly_request_limit[current_user.my_plan].to_s(:delimited)}"
+        %li= "今月の取得件数　　　　　　#{current_user.current_history&.acquisition_count&.to_s(:delimited)}/#{EasySettings.monthly_acquisition_limit[current_user.my_plan].to_s(:delimited)}"
+        %li= "今月の簡易調査依頼回数　　#{current_user.current_history&.simple_investigation_count&.to_s(:delimited)}/#{EasySettings.simple_investigation_limit[current_user.my_plan].to_s(:delimited)}"
+
+      - if current_user.billing.histories.present?
+        #billing_history.card-panel.with-title-band
+          .card-title-band 課金、請求履歴
+
+          - if ( this_month_histories = current_user.billing.this_month_histories ).present?
+            %b 今月の課金金額
+            %table
+              %tr
+                %th 課金日
+                %th 項目名
+                %th 金額
+              - this_month_histories.each do |history|
+                %tr
+                  %td= display_date(history.billing_date)
+                  %td= history.item_name
+                  %td= "#{history.price.to_s(:delimited)}円"
+            %br
+          = link_to '過去の課金、請求履歴', '/payment_histories'
+
+      #coupon.card-panel.with-title-band
+        .card-title-band クーポンコード入力
+
+        = form_with url: coupon_path,  method: :put do |f|
+          .alert-msg= @coupon_error_message if @coupon_error_message.present?
+          .input-field
+            = f.text_field :coupon_code, { value: @coupon_code }
+            = f.label :coupon_code, 'クーポンコード'
+          .actions.margine_bottom
+            = f.button '送信', class: 'btn waves-effect waves-light'
+
+      .card-panel.with-title-band
+        .card-title-band ユーザ情報の変更
+
+        = form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f|
+          #error-message
+            = render "devise/shared/error_messages", resource: resource
+          .input-field
+            = f.text_field :company_name, autocomplete: 'organization'
+            = f.label :company_name
+          .row
+            .input-field.col.s6
+              = f.text_field :family_name, autocomplete: 'family_name'
+              = f.label :family_name
+            .input-field.col.s6
+              = f.text_field :given_name, autocomplete: 'given_name'
+              = f.label :given_name
+          .input-field
+            = f.text_field :department, autocomplete: 'department'
+            = f.label :department
+          .input-field
+            = f.select :position, User.positions.keys.map { |k| [t("enum.user.position.#{k}"), k] }, { include_blank: '選択してください' }
+            = f.label :position
+          .input-field
+            = f.text_field :tel, autocomplete: 'tel'
+            = f.label :tel
+          .input-field
+            = f.email_field :email, autocomplete: 'email'
+            = f.label :email
+          - if devise_mapping.confirmable? && resource.pending_reconfirmation?
+            %div
+              = t('waiting_mail_confirmation', mail: resource.unconfirmed_email)
+          .space
+          %i= t('leave_blank')
+          .col.s12
+            .input-field
+              = f.password_field :password, autocomplete: 'new-password'
+              = f.label :password
+              - if @minimum_password_length
+                %em
+                  = t('password_validation', minimum_password_length: @minimum_password_length)
+            .input-field
+              = f.password_field :password_confirmation, autocomplete: 'new-password'
+              = f.label :password_confirmation
+          .space
+          %i= t('need_current_password')
+          .col.s12
+            .input-field
+              = f.password_field :current_password, autocomplete: 'current-password'
+              = f.label :current_password
+          .actions.margine_bottom
+            = f.button t('update_button'), class: 'btn waves-effect waves-light'
+
+      #cancel_account_box.card-panel.with-title-band
+        .card-title-band= t('cancel_my_account')
+        - if current_user.scheduled_stop?
+          %p= make_submit_button({text: t('cancel_account')}, registration_path(resource_name), :delete, {}, 'cancel_account', 'btn waves-effect waves-light')
+        - elsif current_user.paid? || current_user.trial? || current_user.waiting?
+          %p= t('you_can_cancel_account_after_stop_subscription')
+        - else
+          %p= make_submit_button({text: t('cancel_account')}, registration_path(resource_name), :delete, {}, 'cancel_account', 'btn waves-effect waves-light')

@@ -1,0 +1,64 @@
+%ul#dropdown.dropdown-content.hide-on-large-only
+  %li= link_to '企業一覧サイトから収集', '/'
+  - if user_signed_in? && current_user.administrator?
+    %li= link_to '単一HP情報取得', '/search'
+  %li= link_to '企業HP情報の取得', '/request/multiple'
+  %li= link_to '企業DBを利用', '/request/multiple?init=4'
+  %li= link_to 'サービス紹介', '/information'
+  %li= link_to 'お問い合わせ', '/inquiry'
+  - if user_signed_in?
+    - if current_user.administrator?
+      %li= link_to '管理者ページ', admin_page_payments_path
+    %li.divider
+    %li
+      %span= current_user.email
+    %li= link_to '設定', edit_user_registration_path
+    %li= link_to "ログアウト", destroy_user_session_path, method: :delete, data: { confirm: 'ログアウトしてもよろしいですか？' }
+  - else
+    %li.divider
+    %li= link_to '無料ユーザ登録', new_user_registration_path
+    %li= link_to 'ログイン', new_user_session_path
+
+%nav.bgc-main
+  .nav-wrapper
+    %a.brand-logo.hide-on-med-and-down{href: '/'}= image_tag 'logo.jpg'
+    %a.brand-logo.hide-on-large-only{href: '/'}= image_tag 'logo.jpg'
+    %ul#nav-mobile.right.hide-on-med-and-down
+      %li
+        = link_to '企業一覧サイトから収集', '/'
+      - if user_signed_in? && current_user.administrator?
+        %li
+          = link_to '単一HP情報取得', '/search'
+      %li
+        = link_to '企業HP情報の取得', '/request/multiple'
+      %li
+        = link_to '企業DBを利用', '/request/multiple?init=4'
+      %li
+        = link_to 'サービス紹介', '/information'
+      %li
+        = link_to 'お問い合わせ', '/inquiry'
+      - if user_signed_in?
+        - if current_user.administrator?
+          %li
+            #admin_page= link_to 'Sidekiq', sidekiq_web_path
+          %li
+            #admin_page= link_to '管理者', admin_page_payments_path
+          %li
+            #admin_page= link_to 'Admin', admin_search_requests_path
+        %li
+          #email= current_user.email
+        %li
+          #edit_user= link_to '設定', edit_user_registration_path
+        %li
+          #log_out= link_to "ログアウト", destroy_user_session_path, method: :delete, data: { confirm: 'ログアウトしてもよろしいですか？' }
+      - else
+        %li
+          #sign_up= link_to '無料ユーザ登録', new_user_registration_path
+        %li
+          #sign_in= link_to 'ログイン', new_user_session_path
+
+    %ul#nav-mobile.right.hide-on-large-only
+      %li
+        %a.dropdown-trigger.dropdown-menu{ 'href' => "#!", 'data-target' => "dropdown"}
+          メニュー
+          %i.material-icons.right arrow_drop_down

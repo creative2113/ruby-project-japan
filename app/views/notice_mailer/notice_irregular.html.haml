@@ -1,0 +1,14 @@
+= "お知らせ：#{@mark}"
+%br
+%br
+= "#{@title}"
+%br
+%br
+- @text.split(/\r\n|\r|\n/).each do |str|
+  = str
+  %br
+%br
+%br
+%p ※このメールに対する返信は受け付けておりません。
+%br
+#{@service}

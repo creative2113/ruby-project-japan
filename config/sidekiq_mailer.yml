@@ -1,0 +1,23 @@
+default: &default
+  :verbose: false
+  :pidfile: ./tmp/pids/sidekiq.pid # 使われていない Syslogで吐かれる
+  :logfile: ./log/sidekiq.log      # 使われていない Syslogで吐かれる
+  :queues:
+    - [ mailers, 10 ]
+    - [ default, 5 ]
+
+development:
+  <<: *default
+  :concurrency: 2
+
+test:
+  <<: *default
+  :concurrency: 2
+
+dev:
+  <<: *default
+  :concurrency: 2
+
+production:
+  <<: *default
+  :concurrency: 2

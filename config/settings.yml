@@ -1,0 +1,480 @@
+default: &default
+
+  service_name: 企業リスト収集のプロ
+
+  ban_top_level_domain: [cn, kp]
+
+  plan_list: [beta_standard, beta_gold, beta_platinum]
+
+  plan:
+    public:        0
+    free:          1
+    light:         2
+    standard:      3
+    gold:          4
+    platinum:      5
+    annually_light:    6
+    annually_standard: 7
+    annually_gold:     8
+    annually_platinum: 9
+    beta_light:    100
+    beta_standard: 101
+    beta_gold:     102
+    beta_platinum: 103
+    test_light:    200
+    test_standard: 201
+    test_annually_light:    202
+    test_annually_standard: 203
+    testerA:       997
+    testerB:       998
+    testerC:       996
+    testerD:       995
+    administrator: 999
+
+  # amount:
+  #   public:        0
+  #   free:          0
+  #   light:         5400
+  #   standard:      10800
+  #   gold:          54000
+  #   platinum:      108000
+  #   annually_light:    6
+  #   annually_standard: 7
+  #   annually_gold:     8
+  #   annually_platinum: 9
+  #   beta_public:   0
+  #   beta_free:     0
+  #   beta_light:    550
+  #   beta_standard: 1000
+  #   beta_gold:     3000
+  #   beta_platinum: 10000
+  #   test_light:    1000
+  #   test_standard: 3000
+
+  payjp_plan_id:
+    light:         1
+    standard:      2
+    gold:          3
+    platinum:      4
+    beta_light:    100_light
+    beta_standard: 101_standard
+    beta_gold:     102_gold
+    beta_platinum: 103_platinum
+    test_light:    200_light
+    test_standard: 201_standard
+
+  public_access_limit:
+    ip:   90 # ベータ版で利用者が少ない時
+
+  waiting_requests_limit:
+    public:        100
+    free:          1
+    light:         5
+    standard:      10
+    gold:          20
+    platinum:      20
+    annually_light:    5
+    annually_standard: 10
+    annually_gold:     20
+    annually_platinum: 20
+    beta_public:   100
+    beta_free:     1
+    beta_light:    2
+    beta_standard: 4
+    beta_gold:     6
+    beta_platinum: 10
+    test_light:    10
+    test_standard: 10
+    test_annually_light:    10
+    test_annually_standard: 10
+    testerA:       10
+    testerB:       10
+    testerC:       10
+    testerD:       10
+    administrator: 9999999
+
+  # 使っていない？
+  access_limit:
+    public:        20
+    free:          10
+    light:         30
+    standard:      100
+    gold:          500
+    platinum:      1000
+    beta_public:   20
+    beta_free:     10
+    beta_light:    10
+    beta_standard: 20
+    beta_gold:     40
+    beta_platinum: 20
+    testerA:       100
+    testerB:       100
+    testerC:       100
+    testerD:       100
+    administrator: 9999999
+
+  # 単体検索の待機リクエスト制限
+  access_current_limit:
+    public:        100
+    free:          3
+    light:         5
+    standard:      5
+    gold:          5
+    platinum:      5
+    annually_light:    5
+    annually_standard: 5
+    annually_gold:     5
+    annually_platinum: 5
+    beta_public:   100
+    beta_free:     3
+    beta_light:    3
+    beta_standard: 3
+    beta_gold:     5
+    beta_platinum: 5
+    testerA:       5
+    testerB:       5
+    testerC:       5
+    testerD:       5
+    administrator: 9999999
+
+  # 単体検索の月間リクエスト制限
+  monthly_access_limit:
+    public:        200 # 使っていない
+    free:          10000
+    light:         300
+    standard:      1000
+    gold:          5000
+    platinum:      10000
+    annually_light:    300
+    annually_standard: 1000
+    annually_gold:     5000
+    annually_platinum: 10000
+    beta_public:   200
+    beta_free:     10000
+    beta_light:    10000
+    beta_standard: 10000
+    beta_gold:     10000
+    beta_platinum: 10000
+    testerA:       1000
+    testerB:       1000
+    testerC:       1000
+    testerD:       1000
+    administrator: 9999999
+
+  access_limit_to_sealed_page: 10
+
+  # 使っていない
+  request_limit:
+    public:        5
+    free:          10
+    light:         50
+    standard:      50
+    gold:          50
+    platinum:      50
+    beta_public:   5
+    beta_free:     10
+    beta_light:    10
+    beta_standard: 10
+    beta_gold:     20
+    beta_platinum: 20
+    testerA:       50
+    testerB:       50
+    testerC:       50
+    testerD:       50
+    administrator: 9999999
+
+  monthly_request_limit:
+    public:        30 # 使っていない
+    free:          20
+    light:         300
+    standard:      1000
+    gold:          5000
+    platinum:      10000
+    annually_light:    300
+    annually_standard: 1000
+    annually_gold:     5000
+    annually_platinum: 10000
+    beta_public:   30
+    beta_free:     20
+    beta_light:    20
+    beta_standard: 30
+    beta_gold:     40
+    beta_platinum: 60
+    test_light:    300
+    test_standard: 500
+    test_annually_light:    300
+    test_annually_standard: 500
+    testerA:       1000
+    testerB:       1000
+    testerC:       1000
+    testerD:       1000
+    administrator: 9999999
+
+  request_expiration_days:
+    public:        7
+    free:          7
+    light:         7
+    standard:      7
+    gold:          7
+    platinum:      7
+    annually_light:    7
+    annually_standard: 7
+    annually_gold:     7
+    annually_platinum: 7
+    beta_public:   7
+    beta_free:     7
+    beta_light:    7
+    beta_standard: 7
+    beta_gold:     7
+    beta_platinum: 7
+    testerA:       7
+    testerB:       7
+    testerC:       7
+    testerD:       7
+    administrator: 7
+
+  corporate_list_search_page_limit:
+    public:        20
+    free:          20
+    light:         200
+    standard:      500
+    gold:          500
+    platinum:      1000
+    annually_light:    200
+    annually_standard: 500
+    annually_gold:     500
+    annually_platinum: 1000
+    beta_public:   20
+    beta_free:     20
+    beta_light:    20
+    beta_standard: 30
+    beta_gold:     300
+    beta_platinum: 1000
+    testerA:       10
+    testerB:       10
+    testerC:       10
+    testerD:       10
+    administrator: 1000
+
+  corporate_list_analysis_page_limit:
+    public:        20
+    free:          20
+    light:         20
+    standard:      20
+    gold:          20
+    platinum:      20
+    annually_light:    20
+    annually_standard: 20
+    annually_gold:     20
+    annually_platinum: 20
+    beta_public:   20
+    beta_free:     20
+    beta_light:    20
+    beta_standard: 20
+    beta_gold:     20
+    beta_platinum: 20
+    testerA:       20
+    testerB:       20
+    testerC:       20
+    testerD:       20
+    administrator: 20
+
+  corporate_list_extract_count_limit_each_page:
+    public:        100
+    free:          9999999
+    light:         9999999
+    standard:      9999999
+    gold:          9999999
+    platinum:      9999999
+    annually_light:    9999999
+    annually_standard: 9999999
+    annually_gold:     9999999
+    annually_platinum: 9999999
+    beta_public:   100
+    beta_free:     9999999
+    beta_light:    9999999
+    beta_standard: 9999999
+    beta_gold:     9999999
+    beta_platinum: 9999999
+    testerA:       9999999
+    testerB:       3
+    testerC:       9999999
+    testerD:       9999999
+    administrator: 9999999
+
+  excel_row_limit:
+    public:        20
+    free:          50
+    light:         100
+    standard:      500
+    gold:          1000
+    platinum:      1000
+    annually_light:    100
+    annually_standard: 500
+    annually_gold:     1000
+    annually_platinum: 1000
+    beta_public:   20
+    beta_free:     50
+    beta_light:    100
+    beta_standard: 300
+    beta_gold:     3000
+    beta_platinum: 10000
+    test_light:    100
+    test_standard: 500
+    test_annually_light:    100
+    test_annually_standard: 500
+    testerA:       99999
+    testerB:       99999
+    testerC:       10
+    testerD:       2
+    administrator: 3000
+
+  monthly_acquisition_limit:
+    public:        999999999
+    free:          200
+    light:         999999999
+    standard:      999999999
+    gold:          999999999
+    platinum:      999999999
+    annually_light:    999999999
+    annually_standard: 999999999
+    annually_gold:     999999999
+    annually_platinum: 999999999
+    beta_public:   999999999
+    beta_free:     200
+    beta_light:    999999999
+    beta_standard: 5000
+    beta_gold:     20000
+    beta_platinum: 80000
+    test_light:    2000
+    test_standard: 5000
+    test_annually_light:    2000
+    test_annually_standard: 5000
+    testerA:       99999
+    testerB:       99999
+    testerC:       99999
+    testerD:       99999
+    administrator: 80000
+
+  simple_investigation_limit:
+    public:        0
+    free:          1
+    light:         5
+    standard:      10
+    gold:          20
+    platinum:      20
+    annually_light:    5
+    annually_standard: 10
+    annually_gold:     20
+    annually_platinum: 20
+    beta_public:   0
+    beta_free:     1
+    beta_light:    2
+    beta_standard: 3
+    beta_gold:     4
+    beta_platinum: 6
+    test_light:    10
+    test_standard: 20
+    test_annually_light:    10
+    test_annually_standard: 20
+    testerA:       10
+    testerB:       20
+    testerC:       30
+    testerD:       40
+    administrator: 10
+
+  excel_column_limit: 50
+
+  status:
+    new:               0 # 新規
+    waiting:           1 # 未着手
+    working:           2 # 着手
+    retry:             3 # 再試行
+    all_working:       4 # 全件着手
+    completed:         5 # 完了
+    discontinued:      6 # 中止
+    pending:           7 # 保留
+    error:             8 # エラー
+    arranging:         9 # アレンジ中 (corporate_list_urlsの結果を結合して、company_info_urlsを作成する)
+
+  finish_status:
+    new:                    0  # 新規
+    successful:             1  # 正常終了
+    can_not_get_info:       2  # 取得できなかった
+    using_storaged_date:    3  # ストレージデータを使用
+    invalid_strage_setting: 4  # 無効(ストレージデータ)
+    invalid_url:            5  # URLが無効
+    unavailable_site:       6  # クロールできないサイト (503 or 403 などで)
+    banned_domain:          7  # 禁止ドメイン
+    user_over_access:       8  # アクセス制限
+    current_access_limit:   9  # 同時アクセス制限
+    access_sealed_page:     10 # 封じられたページへのアクセス
+    unsafe_and_sealed_page: 11 # 安全でなく、封じられたページへのアクセス
+    unsafe_page:            12 # 安全でない可能性のページ
+    discontinued:           13 # 中止
+    error:                  14 # エラー終了
+    unexist_page:           15 # 存在しないページ
+    network_error:          16 # ネットワークエラー
+    timeout:                17 # タイムアウト終了
+    monthly_limit:          18 # 月間取得件数制限
+
+  retry_count: 2
+
+  finish_status_word:
+    English:
+      incomplete:    Incomplete
+      successful:    Successful
+      invalid_url:   Invalid URL
+      banned_domain: Banned Domain
+      can_not_get:   Could not get
+      discontinued:  Discontinued
+      monthly_limit: Exceeded Monthly Limit
+      error:         Error
+    日本語:
+      incomplete:    未完了
+      successful:    正常終了
+      invalid_url:   URLが無効です
+      banned_domain: 禁止されたドメインです
+      can_not_get:   情報を取得できませんでした
+      discontinued:  中止されました
+      monthly_limit: 件数制限に達しました
+      error:         エラー終了
+
+  error_level:
+    fatal: 緊急対応
+    error: 対応
+
+  domain_type:
+    entrance: entrance
+    final:    final
+
+  sealed_reason:
+    can_not_get: can not get
+    unsafe:      unsafe
+    unknown:     unknown
+
+  control_files:
+    sidekiq_reboot: sidekiq_rebooting
+    deploying:      deploying
+    server_reboot:  server_reboot
+
+
+development:
+  <<: *default
+  dynamodb_table_prefix: Dev
+  service_host: 'dev-rdk.corp-list-pro.com'
+
+test:
+  <<: *default
+  dynamodb_table_prefix: Test
+  service_host: 'dev-rdk.corp-list-pro.com'
+
+dev:
+  <<: *default
+  dynamodb_table_prefix: Dev
+  service_host: 'dev-rdk.corp-list-pro.com'
+
+production:
+  <<: *default
+  dynamodb_table_prefix: ''
+  service_host: 'corp-list-pro.com'

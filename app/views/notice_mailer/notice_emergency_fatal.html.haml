@@ -1,0 +1,14 @@
+エラー発生
+%br
+%br
+= "要#{@level_str}"
+%br
+%br
+- @content.gsub('] ','] $$$').gsub('", ', '", $$$').split('$$$').each do |str|
+  = str
+  %br
+%br
+%br
+%p ※このメールに対する返信は受け付けておりません。
+%br
+#{@service}

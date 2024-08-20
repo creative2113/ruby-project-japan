@@ -1,0 +1,117 @@
+// Place all the styles related to the searchers controller here.
+// They will automatically be included in application.css.
+// You can use Sass (SCSS) here: http://sass-lang.com/
+
+#top_image {
+  width: 100%;
+  margin-top: 30px;
+}
+
+#top_title {
+  position: relative;
+  h1 {
+    position: absolute;
+    top: 70%;
+    left: 50%;
+    -ms-transform: translate(-50%,-50%);
+    -webkit-transform: translate(-50%,-50%);
+    transform: translate(-50%,-50%);
+    margin: 0;
+    padding: 0;
+    color: white;
+    font-family: sans-serif;
+  }
+}
+
+a.candidate_url.collection-item {
+  padding: 10px 10px 10px 10px;
+  height: 65px;
+
+  table {
+    tr {
+      border: none;
+
+      td.icon {
+        width: 35px;
+        padding: 0px;
+        text-align: center;
+
+        i {
+          position: relative;
+          top: 5px;
+          padding: 0px 15px 0px 15px;
+        }
+
+        span {
+          position: relative;
+          font-size: 80%;
+          top: -7px;
+        }
+      }
+      td {
+        padding: 0px;
+      }
+      .title {
+        padding-left: 10px;
+        font-size: 110%;
+        font-weight: bold;
+      }
+      .url {
+        padding-left: 10px;
+        position: relative;
+        top: -5px;
+      }
+    }
+  }
+}
+
+table#col_select_table {
+  width: initial;
+  tbody {
+    tr {
+      td {
+        border: solid 1px;
+        padding: 8px;
+      }
+      td.first_row_cell {
+        text-align: center;
+        padding: 1px;
+        label {
+          div {
+            padding: 6px 3px 6px 3px;
+            width: 100%;
+            span {
+              padding-left: 25px;
+              height: 100%;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+th.col1 {
+  width: 70px;
+}
+
+th.col2 {
+  width: 80px;
+}
+
+#using_storaged_date_condition {
+  .continuous-text {
+    padding-top: 30px;
+  }
+}
+
+#finger_img {
+  width: 24px;
+  height: 24px;
+}
+
+#guide-finger {
+  color: var(--accent-color);
+  font-weight: 600;
+  font-size: 20px;
+}

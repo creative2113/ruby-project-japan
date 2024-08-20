@@ -1,0 +1,34 @@
+= "#{@name} 様"
+%br
+%br
+いつもご利用ありがとうございます。
+%br
+#{@service}です。
+%br
+%br
+お問い合わせを受け付けました。
+%br
+回答には２、３営業日かかることがございます。
+%br
+%br
+%br
+= "質問者名: #{@name}"
+%br
+%br
+= "メールアドレス: #{@mail}"
+%br
+%br
+= "質問番号: #{@inquiry_id}"
+%br
+%br
+= "問い合わせ内容:"
+%br
+- @bodies.each do |body_line|
+  = body_line
+  %br
+%br
+%br
+%br
+%p ※このメールに対する返信は受け付けておりません。
+%br
+#{@service}

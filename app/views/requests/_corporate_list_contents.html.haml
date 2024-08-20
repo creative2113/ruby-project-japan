@@ -1,0 +1,16 @@
+.field_corporate_list_url_contents_config{data_num: data_num.to_i, url_num: url_num.to_i}
+  .row
+    .alert-msg.ml-2{id: "validate_msg__corporate_list_#{url_num}_contents_#{data_num}"}
+  .row
+    .input-field.col.s3.shrink_margin_bottom
+      = text_field_tag "request[corporate_list][#{url_num}][contents][#{data_num}][title]", val('', :request, :corporate_list, url_num, :contents, data_num, :title)
+      = label_tag "request[corporate_list][#{url_num}][contents][#{data_num}][title]", '種別名 または そのXパス'
+    .input-field.col.s3.shrink_margin_bottom
+      = text_field_tag "request[corporate_list][#{url_num}][contents][#{data_num}][text][1]", val('', :request, :corporate_list, url_num, :contents, data_num, :text, '1')
+      = label_tag "request[corporate_list][#{url_num}][contents][#{data_num}][text][1]", 'サンプル文字1 または そのXパス'
+    .input-field.col.s3.shrink_margin_bottom
+      = text_field_tag "request[corporate_list][#{url_num}][contents][#{data_num}][text][2]", val('', :request, :corporate_list, url_num, :contents, data_num, :text, '2')
+      = label_tag "request[corporate_list][#{url_num}][contents][#{data_num}][text][2]", 'サンプル文字2 または そのXパス'
+    .input-field.col.s3.shrink_margin_bottom
+      = text_field_tag "request[corporate_list][#{url_num}][contents][#{data_num}][text][3]", val('', :request, :corporate_list, url_num, :contents, data_num, :text, '3')
+      = label_tag "request[corporate_list][#{url_num}][contents][#{data_num}][text][3]", 'サンプル文字3 または そのXパス'

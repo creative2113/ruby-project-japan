@@ -1,0 +1,18 @@
+.container
+  .row
+    .col.s6.offset-s3.resposive-size
+      = render partial: 'layouts/notice'
+
+      %h1= t('coupon.title')
+
+      #coupon.card-panel.with-title-band
+        .card-title-band お試し有料プランのご利用
+
+        %li 10日間の有料スタンダード版お試し利用が可能です。
+        %li この後、クレジットカードのご登録が必須です。
+        %li お試し期間が過ぎますと、自動的に課金され、引き続き有料プランがご利用できます。
+        %li お試し期間中に解約されますと、10日後にお試し利用が終了します。課金はされません。
+
+        = form_with url: coupon_trial_path,  method: :post, class: 'always_enable' do |f|
+          = f.hidden_field :coupon_code, value: @code
+          %script.payjp-button{'data-key' => "#{Rails.application.credentials.payment[:payjp_public_key]}", 'data-on-created' => 'onCreated2', 'data-submit-text' => 'お試し利用', 'data-text' => 'お試し利用', :src => 'https://checkout.pay.jp/', :type => 'text/javascript'}

@@ -1,0 +1,31 @@
+.container
+  .row
+    .col.s6.offset-s3.resposive-size
+      - if !notice.nil? || !alert.nil?
+        .card-panel.notice
+          %p.notice= notice
+          %p.alert= alert
+      - else
+        .large-space
+
+      .card-panel.with-title-band
+        .card-title-band.center= t('log_in')
+
+        = form_for(resource, as: resource_name, url: session_path(resource_name)) do |f|
+          .input-field
+            = f.email_field :email, autofocus: true, autocomplete: 'email'
+            = f.label :email
+          .input-field
+            = f.password_field :password, autocomplete: 'current-password'
+            = f.label :password
+          - if devise_mapping.rememberable?
+            .field
+              %label
+                = f.check_box :remember_me
+                %span= f.label :remember_me
+          .actions.margine_top
+            = f.button t('log_in'), class: 'btn waves-effect waves-light'
+
+        #links.margine_top
+          = render 'devise/shared/links'
+  .large-space

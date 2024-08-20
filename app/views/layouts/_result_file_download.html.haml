@@ -1,0 +1,67 @@
+- if @req.downloadable?
+  %h3#confirm_request_form_result 結果
+  %a.icon-with-text{target: :_blank, href: "operation_explanation.pdf#page=#{@req.corporate_list_site? ? 7 : 10}"}
+    %i.material-icons help
+    .ml-1 結果の見方
+  %br
+  .alert-msg.icon-with-text
+    %i.material-icons error_outline
+    .ml-1 取得したデータは利用する前に情報が正しいか必ずご確認をお願いします。
+
+  - if @req.over_expiration_date?
+    .ml-1 ダウンロードの有効期限が切れました。
+
+  - else
+
+    - if @req.result_file_path.present? && @req.expiration_date.present?
+      .ml-1= "有効期限は結果ダウンロード、結果ファイル作成、共に、#{display_date(@req.expiration_date)}までです。"
+    - elsif @req.expiration_date.present?
+      .ml-1= "全結果ファイルは作成中です。有効期限は結果ダウンロード、結果ファイル作成、共に、#{display_date(@req.expiration_date)}までです。"
+    - else
+      .ml-1 ステータスが未完了の場合は途中結果をダウンロードできます。
+
+    - if user_signed_in?
+      - if @req.result_file_path.present?
+        .download_button_row
+          = make_submit_button({text: '全結果ダウンロード'}, download_path, :get, {accept_id: @accept_id}, 'result_downlad', 'btn waves-effect waves-light result_downlad')
+      .download_button_row.mt-1
+        = form_with url: result_file_path, method: :post, local: true do |f|
+          = hidden_field_tag 'accept_id', @accept_id
+          .vertical_center
+            %button.btn.waves-effect.waves-light.result_downlad.left_attach{type: 'submit'}
+              結果ファイル作成
+            .input-field.ml-6.left_attach
+              %span
+                %label
+                  = f.radio_button :file_type, :xlsx, {checked: true}
+                  %span エクセル
+              %span.ml-6
+                %label
+                  = f.radio_button :file_type, :csv
+                  %span CSV
+
+    - else
+      .download_button_row
+        = make_submit_button({text: '結果ダウンロード'}, download_path, :get, {accept_id: @accept_id}, 'result_downlad', 'btn waves-effect waves-light result_downlad')
+  %br
+
+  - if user_signed_in? && @download_files.present?
+    .ml-1 直近の5つまでダウンロード可能です。
+    #result_files_download
+      %table.striped
+        %tbody
+          %tr
+            %th.center 作成依頼日時
+            %th.center 種類
+            %th.center ステータス
+            %th.center DL期限
+            %th.center DL
+            %th.center 備考
+          - @download_files.each do |dl_file|
+            %tr
+              %td.center= display_datetime(dl_file.created_at)
+              %td.center= dl_file.file_type.upcase
+              %td.center= dl_status(dl_file.status)
+              %td.center= display_date(dl_file.expiration_date)
+              %td.center= dl_file.completed? && dl_file.available_download? ? make_submit_button({icon: 'file_download'}, result_file_path, :get, {id: dl_file.id}, 'result_request_downlad', 'btn waves-effect waves-light result_downlad') : ''
+              %td.center= dl_file.fail_files.present? ? "#{dl_file.fail_files.join(', ')}のファイル作成に失敗しました。" : ''

@@ -1,0 +1,25 @@
+お問い合わせが届きました。
+%br
+%br
+= "質問者名: #{@name}"
+%br
+%br
+= "件名: お問い合わせ内容につきまして　【質問番号: #{@inquiry_id}】"
+%br
+%br
+= "メールアドレス: #{@mail}"
+%br
+%br
+= "質問番号: #{@inquiry_id}"
+%br
+%br
+= "問い合わせ内容:"
+%br
+- @bodies.each do |body_line|
+  = body_line
+  %br
+%br
+%br
+%p ※このメールに対する返信は受け付けておりません。
+%br
+#{@service}

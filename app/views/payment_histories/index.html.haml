@@ -1,0 +1,43 @@
+= javascript_include_tag 'payment_histories.js'
+
+.container
+  .row
+    = render partial: 'layouts/notice'
+    %h1 過去の課金、請求履歴
+
+.full-container
+  .row
+    .col.s2
+      #history_months.card-panel
+
+        %h4 課金月
+        - @history_months&.each do |month_str|
+          = form_with url: payment_histories_by_month_path(convert_month_to_number(month_str)), method: :get, local: false, class: 'payment_histories_by_month' do |f|
+            %input.billing_month.submit_link.mt-1{type: "submit", value: month_str }
+
+    .col.s10
+      #billing_data_stock
+      #billing_data.card-panel.with-title-band
+        .card-title-band= "#{@last_month.strftime("%Y年%-m月")} 課金情報"
+
+        .row
+          .col.s12
+            = link_to '請求書', payment_histories_by_month_download_path(@last_month.strftime("%Y%m"), format: 'pdf'), target: '_brank', rel: 'noopener noreferrer', id: 'invoice_download', class: 'btn waves-effect waves-light accent right', style: display(@invoice_download_display)
+        .row
+          .col.s12
+            %table#billing_data_table.mt-2
+              %tr
+                %th.date 課金日
+                %th 項目名
+                %th 支払方法
+                %th.price_cel 単価
+                %th.number_cel 個数
+                %th.price_cel 金額
+              - @last_month_histories.each do |history|
+                %tr
+                  %td= history.billing_date.strftime("%Y年%-m月%-d日")
+                  %td= history.item_name
+                  %td.payment_method_cel= history.payment_method_str
+                  %td.price_cel= "#{history.unit_price.to_s(:delimited)}円"
+                  %td.number_cel= history.number
+                  %td.price_cel= "#{history.price.to_s(:delimited)}円"

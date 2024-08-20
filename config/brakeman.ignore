@@ -1,0 +1,29 @@
+{
+  "ignored_warnings": [
+    {
+      "warning_type": "Unscoped Find",
+      "warning_code": 82,
+      "fingerprint": "c65cf2038884a52334c711feef0d86747222176952811cbff5e48b6f7efdb8dd",
+      "check_name": "UnscopedFind",
+      "message": "Unscoped call to `RequestedUrl#find_by_id`",
+      "file": "app/controllers/payments_controller.rb",
+      "line": 35,
+      "link": "https://brakemanscanner.org/docs/warning_types/unscoped_find/",
+      "code": "RequestedUrl.find_by_id(params[:request_url_id])",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "PaymentsController",
+        "method": "index"
+      },
+      "user_input": "params[:request_url_id]",
+      "confidence": "Weak",
+      "cwe_id": [
+        285
+      ],
+      "note": "adminしか利用しないアクションであるため、無視する。"
+    }
+  ],
+  "updated": "2023-04-25 20:47:47 +0900",
+  "brakeman_version": "5.4.1"
+}

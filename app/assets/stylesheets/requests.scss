@@ -1,0 +1,248 @@
+// Place all the styles related to the requests controller here.
+// They will automatically be included in application.css.
+// You can use Sass (SCSS) here: http://sass-lang.com/
+
+.left_attach {
+  float: left;
+}
+
+.vertical_center {
+  display: flex;
+  align-items: center;
+}
+
+.request_result_summary {
+  tr {
+    th {
+      width: 240px;
+      white-space: nowrap;
+      text-align: center;
+    }
+  }
+}
+
+.request_result_table_summary {
+  table-layout: auto;
+
+  tr {
+    th {
+      white-space: nowrap;
+      text-align: center;
+    }
+    td {
+      white-space: nowrap;
+      padding: 10px;
+    }
+  }
+}
+
+.request_result_table_summary_fixed {
+  table-layout: fixed;
+
+  tr {
+    th {
+      white-space: nowrap;
+      text-align: center;
+      width: 300px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    td {
+      white-space: nowrap;
+      padding: 10px;
+      width: 300px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+}
+
+.test_confirm_area {
+  height: auto;
+  max-height: 600px;
+}
+
+.scroll {
+  overflow: auto;
+}
+
+.left_column_fixed {
+  position: sticky;
+  left: 0;
+  background-color: #FFF;
+}
+
+#request_form {
+  .no_padding {
+    padding-left: initial;
+    padding-right: initial;
+  }
+}
+
+#confirm_request_form {
+  .no_padding {
+    padding-left: initial;
+    padding-right: initial;
+    .input-field.col.s6 {
+      padding-left: initial;
+    }
+  }
+}
+
+.margin-top-bottom {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+#sheet_select {
+  padding-left: initial;
+
+  .col.s6 {
+    padding-left: initial;
+  }
+}
+
+#sheet_select_area {
+  .input-field {
+    margin-top: initial;
+    margin-bottom: initial;
+  }
+}
+
+.separate {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+#header, #col_select {
+  padding-left: initial;
+}
+
+#request_form_making_url_list {
+  .col.s12 {
+    padding-left: initial;
+    padding-right: initial;
+    .input-field.col.s6 {
+      padding-left: initial;
+    }
+  }
+}
+
+#col_select {
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+
+#col_select_area {
+  display: inline-block;
+  margin-bottom: 1rem;
+}
+
+button.remove_url {
+  padding: 0px 8px;
+}
+
+#urls_table {
+  margin-bottom: 1rem;
+}
+
+.download_button_row {
+  display: flex;
+}
+
+#guide-msg {
+  color: #4CAF50;
+  font-weight: 600;
+  font-size: 20px;
+}
+
+/* エクスパンドリスト */
+.expand_list_on_request {
+  width: 200px;
+  font-size: 16px;
+}
+
+// ヘッダー固定
+
+// ヘッダーを固定しても、要素の高さを変更させないために、消えた分を確保する
+#companies_count_position.fixed{
+  background: #fff;
+  height: 27px;
+  width: 100%;
+}
+
+#companies_count.fixed{
+  position: fixed;/*fixedを設定して固定*/
+  z-index: 999;/*最前面へ*/
+  top: 0;/*位置指定*/
+  left: 0;/*位置指定*/
+  background: #fff;
+  margin: 0;
+  padding-top: 7px;
+  padding-bottom: 7px;
+  height: 40px;
+  width: 100%;
+}
+
+// Welcomeカード
+
+#welcome {
+  font-family: "Noto Sans JP";
+  background: #fff6e6;
+  padding: 4rem 4rem;
+  color: #303030;
+  margin: 1.8rem 0;
+  border-radius: 0.5rem;
+  border: 1px solid #cccccc;
+  box-shadow: 0.25rem 0.25rem 0 0 rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+
+  .title {
+    font-size: 1.75rem;
+    margin: 0 0 2rem 0;
+    text-align: center;
+    text-shadow: 2px 2px 0 rgba(255, 255, 255, 1);
+  }
+
+  p {
+    font-size: 0.95rem;
+    line-height: 1.75rem;
+    letter-spacing: 0.5px;
+
+    span {
+      font-weight: bold;
+      font-size: 1rem;
+      background: linear-gradient(transparent 60%, #ffff66 60%);
+    }
+  }
+
+  .welcome-wrapper {
+    position: relative;
+    padding: 0 0;
+
+    &:before {
+      font-family: "Line Awesome Free", "Line Awesome Brands";
+      content: "\f10d";
+      position: absolute;
+      top: -2rem;
+      left: -2rem;
+      font-size: 4rem;
+      font-weight: bold;
+      color: rgba(0, 0, 0, 0.1);
+      z-index: 0;
+    }
+
+    &:after {
+      font-family: "Line Awesome Free", "Line Awesome Brands";
+      content: "\f10e";
+      position: absolute;
+      bottom: -2rem;
+      right: -2rem;
+      font-size: 4rem;
+      font-weight: bold;
+      color: rgba(0, 0, 0, 0.1);
+      z-index: 0;
+    }
+  }
+}

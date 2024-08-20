@@ -1,0 +1,22 @@
+#!/usr/bin/env ruby
+
+ENV['RAILS_ENV'] ||= 'test'
+require File.expand_path('../../config/environment', __FILE__)
+
+require 'test_queue'
+require 'test_queue/runner/rspec'
+
+class RSpecQueueRunner < TestQueue::Runner::RSpec
+  def after_fork(num)
+    ENV.update('TEST_ENV_NUMBER' => num.to_s)
+
+    ActiveRecord::Base.configurations.configs_for(env_name: 'test', name: 'primary').configuration_hash[:database] << num.to_s
+    ActiveRecord::Base.establish_connection(:test)
+
+    ActiveRecord::Tasks::DatabaseTasks.drop_current
+    ActiveRecord::Tasks::DatabaseTasks.create_current
+    ActiveRecord::Tasks::DatabaseTasks.load_schema_current
+  end
+end
+
+RSpecQueueRunner.new.execute

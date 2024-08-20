@@ -1,0 +1,82 @@
+// Place all the styles related to the payments controller here.
+// They will automatically be included in application.css.
+// You can use Sass (SCSS) here: http://sass-lang.com/
+
+.margin_top {
+  margin-top: 10px;
+}
+
+.margin_bottom {
+  margin-bottom: 10px;
+}
+
+#payjp_checkout_box input[type=button] {
+  width:           100px             !important;
+  height:          36px              !important;
+  color:           #FFF              !important;
+  display:         inline-block      !important;
+  background:      var(--main-color) !important;
+  border-radius:   2px               !important;
+  font-size:       14px              !important;
+  border:          none              !important;
+  padding:         0px 16px          !important;
+  margin-top:      10px              !important;
+  letter-spacing:  .5px              !important;
+  text-align:      center            !important;
+  text-transform:  uppercase         !important;
+  outline:         0                 !important;
+  text-decoration: none              !important;
+}
+
+#payjp_checkout_box input[type=button] {
+  pointer-events:     none    !important;
+  background-color:   #DFDFDF !important;
+  -webkit-box-shadow: none    !important;
+  box-shadow:         none    !important;
+  color:              #9F9F9F !important;
+  cursor:             default !important;
+}
+
+#payjp_checkout_box input[type=button].enabled {
+  pointer-events: auto              !important;
+  color:          #FFF              !important;
+  background:     var(--main-color) !important;
+  cursor:         pointer           !important;
+  cursor:         hand              !important;
+  -webkit-box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.12), 0 1px 5px 0 rgba(0, 0, 0, 0.2) !important;
+          box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.12), 0 1px 5px 0 rgba(0, 0, 0, 0.2) !important;
+  -webkit-transition: background-color .2s ease-out !important;
+          transition: background-color .2s ease-out !important;
+}
+
+#payjp_checkout_box input[type="button"].enabled:focus,  {
+  background-color: #3C8A3F !important;
+}
+
+#payjp_checkout_box input[type="button"].enabled:hover {
+  -webkit-box-shadow: 0 3px 3px 0 rgba(0, 0, 0, 0.14), 0 1px 7px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -1px rgba(0, 0, 0, 0.2);
+          box-shadow: 0 3px 3px 0 rgba(0, 0, 0, 0.14), 0 1px 7px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -1px rgba(0, 0, 0, 0.2);
+  background-color: #7FC781 !important;
+}
+
+.always_enable #payjp_checkout_box input[type=button] {
+  pointer-events: auto              !important;
+  color:          #FFF              !important;
+  background:     var(--main-color) !important;
+  cursor:         pointer           !important;
+  cursor:         hand              !important;
+  -webkit-box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.12), 0 1px 5px 0 rgba(0, 0, 0, 0.2) !important;
+          box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.12), 0 1px 5px 0 rgba(0, 0, 0, 0.2) !important;
+  -webkit-transition: background-color .2s ease-out !important;
+          transition: background-color .2s ease-out !important;
+}
+
+.always_enable #payjp_checkout_box input[type="button"]:focus,  {
+  background-color: #3C8A3F !important;
+}
+
+.always_enable #payjp_checkout_box input[type="button"]:hover {
+  -webkit-box-shadow: 0 3px 3px 0 rgba(0, 0, 0, 0.14), 0 1px 7px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -1px rgba(0, 0, 0, 0.2);
+          box-shadow: 0 3px 3px 0 rgba(0, 0, 0, 0.14), 0 1px 7px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -1px rgba(0, 0, 0, 0.2);
+  background-color: #7FC781 !important;
+}

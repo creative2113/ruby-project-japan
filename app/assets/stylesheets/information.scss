@@ -1,0 +1,66 @@
+// Place all the styles related to the information controller here.
+// They will automatically be included in application.css.
+// You can use Sass (SCSS) here: http://sass-lang.com/
+
+.plan-description.with-title-band {
+  position: relative;
+  padding-top: 0px;
+  padding-left: 0px;
+  padding-right: 0px;
+  margin-top: 0px;
+}
+
+.plan-description.card-panel.with-title-band .card-title-band {
+  font-size: 16.5px;
+  position: static;
+}
+
+.plan-description {
+  table {
+    padding: 5px 24px 0px 24px;
+    border-collapse: separate;
+    th {
+      padding: 8px 5px;
+    }
+    td {
+      padding: 0px 5px;
+    }
+    td.right {
+      text-align: right;
+      vertical-align: middle;
+    }
+    td div.right {
+      display: inline-block;
+      text-align: right;
+      vertical-align: middle;
+    }
+  }
+}
+
+.plan-description {
+  p {
+    padding: 0px 24px 0px 24px;
+  }
+}
+
+.price {
+  color: var(--main-color);
+  font-size: 20px;
+  text-align: center;
+}
+
+#notice {
+
+  .notice-block {
+    padding: 10px 0px;
+
+    .subject {
+      font-size: 19px;
+      font-weight: 600;
+    }
+    .body {
+      font-size: 16px;
+      padding: 8px;
+    }
+  }
+}

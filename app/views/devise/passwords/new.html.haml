@@ -1,0 +1,24 @@
+.container
+  .row
+    .col.s6.offset-s3.resposive-size
+      - if !notice.nil? || !alert.nil?
+        .card-panel.notice
+          %p.notice= notice
+          %p.alert= alert
+      - else
+        .large-space
+
+      .card-panel.with-title-band
+        .card-title-band.center= t('foget_password')
+        = form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :post }) do |f|
+          #error-message
+            = render "devise/shared/error_messages", resource: resource
+          .input-field
+            = f.email_field :email, autofocus: true, autocomplete: "email"
+            = f.label :email
+          .actions
+            = f.button t('send_reset_password_instructions'), class: 'btn waves-effect waves-light'
+
+        .margine_top
+          = render "devise/shared/links"
+  .large-space

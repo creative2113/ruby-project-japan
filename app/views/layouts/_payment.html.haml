@@ -1,0 +1,54 @@
+#plan_registration.card-panel.with-title-band
+  .card-title-band プラン登録
+  - if user_signed_in?
+    - if current_user.waiting?
+      お申し込み、誠にありがとうございます。
+      %br
+      有料プランが有効化されるまでしばらくお待ちください。
+    - elsif !current_user.paid?
+      - if current_user.unpaid?
+        ご登録誠にありがとうございます。
+        %br
+        %br
+
+      %b クレジットカード
+      %br
+      %br
+      %li ご希望のプランを選択し、お支払いを完了させて下さい。
+      %li お申し込みされなくても、無料プランがご利用いただけます。
+      %li 月額定期課金以外で課金が発生することはございませんので、ご安心ください。
+      %li お申し込み後、すぐに一回目の課金が発生し、以降、毎月同日に自動的に課金が発生致します。
+      %br
+      = form_tag(payment_path, method: :post) do
+        プラン選択
+        %br
+        - Billing.plan_list.each do |plan|
+          - n = EasySettings.plan[plan]
+          - plan_obj = PlanConverter.convert_to_plan(n)
+          %label
+            = radio_button_tag :plan, n
+            %span= "#{plan_obj.name}  料金: #{plan_obj.price.to_s(:delimited)}円/月"
+          %br
+
+        .input-field
+          = password_field_tag :password_for_plan_registration
+          = label_tag :password_for_plan_registration, 'パスワード'
+
+        %script.payjp-button{'data-key' => "#{Rails.application.credentials.payment[:payjp_public_key]}", 'data-on-created' => 'onCreated', 'data-submit-text' => 'お支払い', 'data-text' => 'お支払い', :src => 'https://checkout.pay.jp/', :type => 'text/javascript'}
+
+      %br
+        %p
+          %b 銀行振込
+          %li
+            お手数ですが、
+            = link_to 'お問い合わせフォーム', '/inquiry'
+            よりお申し出ください。
+          %li 一回の振込処理につき、事務手数料330円(税込)を頂戴いたします。
+          %li 複数月まとめてのお申し込みが可能です。
+        %p.mt-4
+          %b 請求書払い
+          %li
+            お手数ですが、
+            = link_to 'お問い合わせフォーム', '/inquiry'
+            よりお申し出ください。
+          %li 法人のお客様のみお申し込みが可能です。社判を押印したお申し込み書の送付が必要となります。

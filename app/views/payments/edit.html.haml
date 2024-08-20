@@ -1,0 +1,80 @@
+= javascript_include_tag 'payments.js'
+
+.container
+  .row
+    .col.s6.offset-s3.resposive-size
+      = render partial: 'layouts/notice'
+
+      %h1 プラン、カード情報変更
+
+      #change_card.card-panel.with-title-band
+        .card-title-band カード情報の変更
+        .margin_bottom
+          %table.margin_bottom
+            %tr
+              %td 現在の登録カード:
+              %td= @card[:brand]
+              %td= "****-****-****-#{@card[:last4]}"
+
+          = form_tag(payment_card_update_path, method: :put) do
+            .input-field
+              = password_field_tag :password_for_card_change
+              = label_tag :password_for_card_change, 'パスワード'
+
+            %script.payjp-button{'data-key' => "#{Rails.application.credentials.payment[:payjp_public_key]}", 'data-on-created' => 'onCreated', 'data-submit-text' => 'カード変更', 'data-text' => 'カード変更', :src => 'https://checkout.pay.jp/', :type => 'text/javascript'}
+
+      #modify_plan.card-panel.with-title-band
+        .card-title-band プラン変更
+        .margin_bottom
+        %p
+          お手数ですが、
+          = link_to 'お問い合わせフォーム', '/inquiry'
+          よりお申し出ください。
+        - if false
+          %ul
+            %li プランを上げる場合は差額分(日割り)を即時課金し、決済完了後、新プランでご利用できます。
+            %li プランを下げる場合は次回課金日に該当料金を課金します。次回課金日までは現在のプランでご利用できます。
+          %p= '現在のプラン: ' + t("plan.#{current_user.my_plan}") + '  料金: ' + EasySettings.amount[current_user.my_plan].to_s(:delimited) + '円/月(税込)'
+          - if current_user.next_plan?
+            %p= '次回のプラン: ' + t("plan.#{current_user.next_plan}") + '  料金: ' + EasySettings.amount[current_user.next_plan].to_s(:delimited) + '円/月(税込)'
+          = form_tag(payment_update_path, method: :put) do
+            変更後のプラン
+            %br
+            - Billing.plan_list.each do |plan|
+              - n = EasySettings.plan[plan]
+              - if current_user.my_plan != plan && current_user.next_plan != plan
+                %label
+                  = radio_button_tag :plan, n
+                  %span= "#{t("plan.#{plan}")}プラン  料金: #{EasySettings.amount[plan].to_s(:delimited)}円/月(税込)"
+                %br
+            #payment_info{style: 'display:none;'}
+              %table
+                %tr
+                  %td 今回の課金額
+                  %td#price_this_time
+                %tr
+                  %td 次回以降の課金額
+                  %td#new_price
+                %tr
+                  %td 次回課金日
+                  %td= display_date(current_user.billing.expiration_date)
+
+            .input-field
+              = password_field_tag :password_for_plan_change
+              = label_tag :password_for_plan_change, 'パスワード'
+
+            = button_tag t('plan_change'), id: 'change_plan', class: 'btn waves-effect waves-light margin_top disabled'
+
+      #stop_plan.card-panel.with-title-band
+        - title = current_user.trial? ? '課金停止（お試し利用の解約）' : '課金停止'
+        .card-title-band= title
+        %ul.margin_bottom
+          %li 課金を停止後、有効期限内は同プランでご使用できます。有効期限後から、無料プランユーザとなります。
+          %li.alert-msg また、有効期限内はプラン変更、および、プラン再登録は受け付けられなくなります。
+          %li= "有効期限: #{display_date(current_user.expiration_date)}"
+          = form_tag(payment_stop_path, method: :delete) do
+            .input-field
+              = password_field_tag :password_for_plan_stop
+              = label_tag :password_for_plan_stop, 'パスワード'
+
+            = button_tag t('billing_stop'), id: 'stop_subscription', class: 'btn waves-effect waves-light disabled'

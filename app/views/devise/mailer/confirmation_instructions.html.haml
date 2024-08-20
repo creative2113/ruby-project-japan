@@ -1,0 +1,11 @@
+%p= @resource.company_name
+%p= t('dear_name', family_name: @resource.family_name, given_name: @resource.given_name)
+%br
+%p= t('thanks_for_registration', service_name: EasySettings.service_name)
+%br
+%p= t('clicl_link_to_confirm_sign_up')
+%p= link_to t('confirm_my_account'), confirmation_url(@resource, confirmation_token: @token)
+%br
+%p ※このメールに対する返信は受け付けておりません。
+%br
+%p= EasySettings.service_name

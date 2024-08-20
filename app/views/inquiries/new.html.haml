@@ -1,0 +1,51 @@
+.container
+  .row
+    .large-space
+    .col.s6.offset-s3.resposive-size
+      - if !notice.nil? || !alert.nil?
+        .card-panel.notice
+          %p.notice= notice
+          %p.alert= alert
+
+    .col.s6.offset-s3.resposive-size
+
+      .card-panel.with-title-band
+        .card-title-band.center お問い合わせ
+
+        #discription
+          %p.emphasis-text
+            　まだ機能的に不十分なところや取得できないサイトも多々あると思います。そこは順次グレードアップしていく所存です。
+            %br
+            　ご意見、ご感想、ご声援や情報を取得できなかったサイトのご報告など頂けましたら、幸いでございます。
+          %ul
+            %li 回答には2、3営業日かかることがございます。
+            / %li セキュリティ強化のため、自動返信メールを送信しておりません。
+            / %li お問い合わせ内容をよく確認してから、送信してください。
+            %li 送信後にお問い合わせ内容をメールにて送らせていただきます。
+            %li しばらく経ってもメールが届かない場合は、メールアドレスが間違っている可能性がございます。
+            %li その場合は、メールアドレスをご確認の上、再度、お問い合わせください。
+
+        = form_for(@inquiry, url: inquiry_path) do |f|
+
+          - unless @notice_msg.nil?
+            .notice-msg
+              = @notice_msg
+
+          .input-field
+            = f.text_field :name, maxlength: 30
+            = f.label :name, 'お名前'
+          .input-field
+            = f.email_field :mail, autocomplete: "email"
+            = f.label :mail, 'メールアドレス'
+          .input-field
+            = f.text_area :body, class: 'materialize-textarea'
+            = f.label :body, '問い合わせ内容'
+          .mt-3= recaptcha_tags
+          .actions.mt-3
+            = f.button '送信する', class: 'btn waves-effect waves-light'
+        .large-space
+        %p
+          .emphasis-text ご支援、サポートに関しまして
+          開発スピードを早めるためにも、もしご支援、サポートいただける方は、ご連絡いただけますと大変幸いです。
+
+  .large-space

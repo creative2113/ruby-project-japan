@@ -1,0 +1,32 @@
+.container
+  .row
+    .col.s6.offset-s3.resposive-size
+      - if !notice.nil? || !alert.nil?
+        .card-panel.notice
+          %p.notice= notice
+          %p.alert= alert
+      - else
+        .large-space
+
+      .card-panel.with-title-band
+        .card-title-band.center= t('change_your_password')
+
+        = form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :put }) do |f|
+          #error-message
+            = render "devise/shared/error_messages", resource: resource
+          = f.hidden_field :reset_password_token
+          .input-field
+            = f.password_field :password, autofocus: true, autocomplete: "new-password"
+            = f.label :password, t('new _password')
+            - if @minimum_password_length
+              %em
+                = t('password_validation', minimum_password_length: @minimum_password_length)
+          .input-field
+            = f.password_field :password_confirmation, autocomplete: "off"
+            = f.label :password_confirmation, t('confirm_new_password')
+          .actions
+            = f.button t('change_my_password'), class: 'btn waves-effect waves-light'
+
+        .margine_top
+          = render "devise/shared/links"
+  .large-space

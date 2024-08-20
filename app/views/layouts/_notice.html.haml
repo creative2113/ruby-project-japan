@@ -1,0 +1,12 @@
+- if notice.present? && alert.present?
+  .card-panel.notice.alert_card
+    %p.notice= notice
+    %p.alert= alert
+
+- elsif notice.present?
+  .card-panel.notice
+    %p.notice= notice
+
+- elsif alert.present?
+  .card-panel.notice.alert_card
+    %p.alert= alert

@@ -1,0 +1,31 @@
+- if @user.family_name.present?
+  #{@user.family_name} 様
+- else
+  #{@user.email} 様
+\
+いつもご利用ありがとうございます。
+#{@service}です。
+\
+プラン変更が完了しました。
+\
+\
+変更前プラン名: #{t("plan.#{@before_plan}")}プラン
+変更後プラン名: #{t("plan.#{@after_plan}")}プラン
+今回課金料金: #{@price_this_time.to_i.to_s(:delimited)}円
+変更後料金: #{EasySettings.amount[@after_plan].to_i.to_s(:delimited)}円
+次回更新日: #{@user.billing.expiration_date&.strftime("%Y年%-m月%-d日")}
+\
+- if @up_or_down == :up
+  プランを上げる場合は差額分(日割り)を即時課金致します。決済完了後、新プランでご利用できます。
+- else
+  プランを下げる場合は次回更新日に変更後の料金を課金致します。次回更新日に更新されるまでは現在のプランでご利用できます。
+今後は毎月、更新日と同日に変更後の料金で決済される予定です。
+\
+もしも、身に覚えのないプラン変更の場合は、以下のお問合せフォームよりご連絡くださいませ。
+#{@url}
+\
+今後とも#{@service}を何卒、宜しくお願い申し上げます。
+\
+※このメールに対する返信は受け付けておりません。
+\
+#{@service}

@@ -1,0 +1,2 @@
+class BanInquiry < ApplicationRecord
+end

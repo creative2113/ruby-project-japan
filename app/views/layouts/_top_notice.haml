@@ -1,0 +1,12 @@
+- notices = Notice.opened.view_top
+- if notices.present?
+  .notices-area.scroll
+    - notices.each do |notice|
+      .card-panel.notice
+        .subject= notice.subject
+        .body
+          - notice.body.split("\n").each do |str|
+            = str
+            %br
+        .date.right_text= display_date(notice.opened_at)
+

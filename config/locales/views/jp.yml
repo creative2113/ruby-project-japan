@@ -1,0 +1,14 @@
+ja:
+  plan:
+    free:          無料
+    light:         ライト
+    standard:      スタンダード
+    gold:          ゴールド
+    platinum:      プラチナム
+    beta_light:    β版ライト
+    beta_standard: β版スタンダード
+    beta_gold:     β版ゴールド
+    beta_platinum: β版プラチナム
+    test_light:    Rspecテスト ライト
+    test_standard: Rspecテスト スタンダード
+    administrator: 管理者

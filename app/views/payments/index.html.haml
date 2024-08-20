@@ -1,0 +1,414 @@
+= javascript_include_tag 'payments.js'
+= javascript_include_tag 'requests.js'
+
+.container
+  = render partial: 'layouts/notice'
+
+  %h1 管理者ページ
+
+  = form_tag(admin_page_payments_path, method: :get) do
+    .input-field.col.s12
+      = text_field_tag :user_id_or_email
+      = label_tag :user_id_or_email, 'ユーザID or メールアドレス'
+    %br
+    .col.s12.no_padding.center.margin-top-bottom
+      %button.btn-large.waves-effect.waves-light.accent{type: 'submit', name: 'commit'}
+        送信
+        %i.material-icons.right send
+
+  - if @user.present?
+    %h3 ユーザ情報
+    %table
+      %tr
+        %th 会社名
+        %th 姓名
+        %th メール
+        %th 部署
+        %th 役職
+        %th 電話暗号
+      %tr
+        %td= @user.company_name
+        %td= "#{@user.family_name} #{@user.given_name}"
+        %td= @user.email
+        %td= @user.department
+        %td= t("enum.user.position.#{@user.position}")
+        %td= @user.tel
+
+    %h3 トラッキング情報
+    %table
+      %tr
+        %th ログインカウント
+        %th 現在ログイン日時
+        %th 前回ログイン日時
+        %th 現在のログインIPアドレス
+        %th 前回ログインIPアドレス
+      %tr
+        %td= @user.sign_in_count
+        %td= @user.current_sign_in_at
+        %td= @user.last_sign_in_at
+        %td= @user.current_sign_in_ip
+        %td= @user.last_sign_in_ip
+
+    %h3 使用状況
+    %table
+      %tr
+        %th サーチカウント
+        %th 前回サーチカウント
+        %th 最新サーチ実行日
+        %th 今月サーチカウント
+        %th 複数リクエストカウント
+        %th 前回複数リクエストカウント
+        %th 前回複数リクエスト実行日
+        %th 今月リクエストカウント
+      %tr
+        %td= @user.search_count
+        %td= @user.last_search_count
+        %td= @user.latest_access_date
+        %td= @user.current_history&.search_count
+        %td= @user.request_count
+        %td= @user.last_request_count
+        %td= @user.last_request_date
+        %td= @user.current_history&.request_count
+
+    %h3 課金状況
+    %table#subscription_table
+      %tr
+        %th 支払い方法
+        %th 有効期限
+        %th カスタマーID
+        %th 定期課金ID
+      %tr
+        %td= @user.billing.payment_method.to_s
+        %td= display_datetime(@user.expiration_date)
+        %td= @user.billing.customer_id
+        %td= @user.billing.subscription_id
+    %h4 プラン
+    - current_id = @user.billing.current_plans[0]&.id
+    %table#plans_table
+      %tr
+        %th
+        %th プラン名
+        %th 金額
+        %th タイプ
+        %th 課金日
+        %th 開始日
+        %th 終了日
+      - @user.billing.plans.order(start_at: :desc).each do |plan|
+        %tr
+          %td= current_id == plan.id ? '現在' : ( plan.start_at > Time.zone.now ? '未来' : '')
+          %td= plan.name
+          %td= plan.price.to_s(:delimited)
+          %td= plan.type
+          %td= plan.charge_date
+          %td= display_datetime(plan.start_at)
+          %td= display_datetime(plan.end_at)
+
+    %h3 課金情報の変更
+    %li この変更はいずれも、PAYJPは正常に更新が完了されていて、DBにのみ値が反映されていない時に実行する。
+    %li 定期課金作成はPAYJPの顧客ID、定期課金ID、更新日をDBに連携し、DBにプランをセットする。
+    %li プランアップグレード、プランダウングレード、プラン即時ダウングレード、停止はDBにのみ反映させる。
+    %li プラン即時ダウングレードは次回のプランがセットされていないと実行されない。
+    %br
+    = form_tag(admin_page_payment_path, method: :put) do
+      = label :user_id, 'ユーザID'
+      = text_field_tag :user_id, @user.id, readonly: true
+      .input-field.col.s12
+        = select_tag :new_plan, options_for_select(plans_list)
+        = label_tag :new_plan, 'プラン選択'
+      .input-field.col.s12
+        = select_tag :to_do, options_for_select({'定期課金作成' => 'create',
+                                                 'プランアップグレード' => 'upgrade',
+                                                 'プランダウングレード' => 'downgrade',
+                                                 'プラン即時ダウングレード' => 'downgrade_now',
+                                                 '停止' => 'stop'})
+        = label_tag :to_do, '操作選択'
+      .input-field.col.s12
+        = text_field_tag :check
+        = label_tag :check, '２文字の文字列を入力(11, ああ)'
+      .col.s12.no_padding.center.margin-top-bottom
+        %button#change_plan_for_admin.btn-large.waves-effect.waves-light.accent.disabled{type: 'submit', name: 'commit', value: '変更', 'data-disable-with' => '変更'}
+          変更
+          %i.material-icons.right send
+
+  - if @user.present? && @user.billing.current_plans[0].blank? && !@user.billing.credit? && !@user.billing.invoice?
+    -# 過去の銀行振込が期限切れの時は、再度新規作成にする
+    %h3 銀行振込ユーザ作成
+    = form_tag(admin_page_create_bank_transfer_path, method: :put) do
+      - email = @user.nil? ? '' : @user.email
+      .input-field.col.s12
+        = text_field_tag :email, email
+        = label_tag :email, 'メールアドレス'
+      .input-field.col.s12
+        = select_tag :new_plan, options_for_select(plans_list)
+        = label_tag :new_plan, 'プラン選択'
+      .input-field.col.s12
+        = text_field_tag :additional_comment
+        = label_tag :additional_comment, '請求履歴に記載するコメント。（例えば、何ヶ月分とか）'
+      .input-field.col.s12
+        = text_field_tag :expiration_date
+        = label_tag :expiration_date, '有効期限の終了月(yyyy/mm/dd) この日のend_of_dayを設定。次の日になれば期限切れ'
+      .input-field.col.s12
+        = text_field_tag :payment_date
+        = label_tag :payment_date, '入金日(yyyy/mm/dd)'
+      .input-field.col.s12
+        = text_field_tag :payment_amount
+        = label_tag :payment_amount, '入金金額'
+      .input-field.col.s12
+        = text_field_tag :str_check
+        = label_tag :str_check, '２文字の文字列を入力(11, ああ)'
+      .col.s12.no_padding.center.margin-top-bottom
+        %button.btn-large.waves-effect.waves-light.accent{type: 'submit', name: 'commit', data: { confirm: '銀行振込でよろしいですか？' }}
+          銀行振込 作成
+          %i.material-icons.right send
+  - elsif @user.present? && @user.billing.bank_transfer? && @user.billing.current_plans[0].present?
+    %h3 銀行振込継続
+    = form_tag(admin_page_continue_bank_transfer_path, method: :put) do
+      - email = @user.nil? ? '' : @user.email
+      .input-field.col.s12
+        = text_field_tag :email, email
+        = label_tag :email, 'メールアドレス'
+      .input-field.col.s12
+        = text_field_tag :additional_comment
+        = label_tag :additional_comment, '請求履歴に記載するコメント。（例えば、何ヶ月分とか）'
+      .input-field.col.s12
+        = text_field_tag :expiration_date
+        = label_tag :expiration_date, '有効期限の終了月(yyyy/mm/dd) この日のend_of_dayを設定。次の日になれば期限切れ'
+      .input-field.col.s12
+        = text_field_tag :payment_date
+        = label_tag :payment_date, '入金日(yyyy/mm/dd)'
+      .input-field.col.s12
+        = text_field_tag :payment_amount
+        = label_tag :payment_amount, '入金金額'
+      .input-field.col.s12
+        = text_field_tag :str_check
+        = label_tag :str_check, '２文字の文字列を入力(11, ああ)'
+      .col.s12.no_padding.center.margin-top-bottom
+        %button.btn-large.waves-effect.waves-light.accent{type: 'submit', name: 'commit', data: { confirm: '銀行振込の継続でよろしいですか？' }}
+          銀行振込 継続
+          %i.material-icons.right send
+
+  - if @user.present? && @user.billing.payment_method.nil? && @user.billing.current_plans[0].blank?
+    %h3 請求書払いユーザ作成
+    = form_tag(admin_page_create_invoice_path, method: :put) do
+      - email = @user.nil? ? '' : @user.email
+      .input-field.col.s12
+        = text_field_tag :email_for_invoice, email
+        = label_tag :email_for_invoice, 'メールアドレス'
+      .input-field.col.s12
+        = select_tag :new_plan_for_invoice, options_for_select(plans_list)
+        = label_tag :new_plan_for_invoice, 'プラン選択'
+      .input-field.col.s12
+        = text_field_tag :start_date_for_invoice
+        = label_tag :start_date_for_invoice, '開始日(yyyy/mm/dd) この日のbeginning_of_dayを設定。過去でも未来でも良い。'
+      .col.s12.no_padding.center.margin-top-bottom
+        %button.btn-large.waves-effect.waves-light.accent{type: 'submit', name: 'commit', data: { confirm: '請求書払いでよろしいですか？' } }
+          請求書払い 作成
+          %i.material-icons.right send
+
+  - if @user.present?
+    #requests
+      %h3 実行履歴
+      .card-panel.with-title-band
+        .card-title-band 企業一覧サイト リクエスト一覧
+        .alert-msg.icon-with-text
+        #donwload-msg.alert-msg.blinking
+        - if @list_site_requests.present?
+          %table.striped
+            %tr
+              %th.center ID
+              %th.center リクエスト名
+              %th.center リクエスト日時
+              %th.center 実行の種類
+              %th.center ステータス
+              %th.center 結果DL
+              %th.center ダウンロード期限
+              %th.center 全体数
+              %th.center 完了数
+              %th.center 失敗数
+            - @list_site_requests.each do |req|
+              %tr
+                %td= link_to req.id, admin_page_payments_path(user_id_or_email: @user.id, request_id: req.id) + '#request_detail'
+                %td= req.title
+                %td= req.requested_date
+                %td= execution_type(req.test)
+                %td= req.get_status_string
+                - if req.available_download?
+                  %td.center= make_submit_button({icon: 'file_download'}, download_path, :get, {accept_id: req.accept_id}, '', 'btn result_downlad waves-effect waves-effectves-light')
+                - else
+                  %td
+                - if req.test
+                  %td
+                  %td
+                  %td
+                  %td
+                - else
+                  %td= req.get_expiration_date
+                  %td= req.total_count_decided? ? req.requested_urls.main.count : '未定'
+                  %td= req.get_completed_urls.main.count
+                  %td= req.get_error_urls.main.count
+          .col.s12
+            レコードは完了から1ヶ月で削除されます。
+          .col.s12.center
+            != pagy_nav(@list_site_pagy)
+
+      .card-panel.with-title-band
+        .card-title-band 複数企業サイト取得 リクエスト一覧
+        .alert-msg.icon-with-text
+        #donwload-msg.alert-msg.blinking
+        - if @multi_requests.present?
+          %table.striped
+            %tr
+              %th.center ID
+              %th.center 結果DL
+              %th.center リクエスト名
+              %th.center リクエスト日時
+              %th.center ステータス
+              %th.center 受付URL数
+              %th.center 完了数
+              %th.center エラー数
+              %th.center ダウンロード期限
+            - @multi_requests.each do |req|
+              %tr
+                %td= link_to req.id, admin_page_payments_path(user_id_or_email: @user.id, request_id: req.id) + '#request_detail'
+                - if req.available_download?
+                  %td.center= make_submit_button({icon: 'file_download'}, download_path, :get, {accept_id: req.accept_id, mode: :multiple}, '', 'btn waves-effect waves-effectves-light result_downlad')
+                - else
+                  %td
+                %td= req.title
+                %td= req.requested_date
+                %td= req.get_status_string
+                %td= req.accepted_url_count
+                %td= req.get_completed_urls.company_info_urls.count
+                %td= req.get_error_urls.company_info_urls.count
+                %td= req.get_expiration_date
+          .col.s12
+            レコードは完了から1ヶ月で削除されます。
+          .col.s12.center
+            != pagy_nav(@multi_pagy)
+
+      .card-panel.with-title-band
+        .card-title-band 単体企業サイト取得 リクエスト一覧
+        .alert-msg.icon-with-text SearchRequestは結果取得後にすぐ削除しているので、基本は出てこない
+        - if @search_requests.present?
+          %table.striped
+            %tr
+              %th.center ID
+              %th.center URL
+              %th.center 受付ID
+              %th.center ステータス
+              %th.center 完了ステータス
+              %th.center use_storage
+              %th.center using_storage_days
+              %th.center free_search
+              %th.center created_at
+              %th.center updated_at
+            - @search_requests.each do |req|
+              %tr
+                %td= link_to req.id, admin_page_payments_path(user_id_or_email: @user.id, search_request_id: req.id) + '#search_request_detail'
+                %td= req.url
+                %td= req.accept_id
+                %td= req.status
+                %td= req.finish_status
+                %td= req.use_storage
+                %td= req.using_storage_days
+                %td= req.free_search
+                %td= req.created_at
+                %td= req.updated_at
+          .col.s12.center
+            != pagy_nav(@search_pagy)
+
+    - if @req.present?
+      #request_detail
+        %h3 リクエスト詳細
+
+        %table.striped
+          - @req.attributes.each do |attribute, val|
+            %tr
+              %th= attribute
+              %td= val
+
+        - if @req_url.present?
+          #requested_url_detail
+            %h3 リクエストURL詳細
+            %table.striped
+              - @req_url.attributes.each do |attribute, val|
+                %tr
+                  %th= attribute
+                  %td= val
+        %br
+        - if @test && @status == '完了'
+          %h3.margin-top-bottom テストクロール結果
+          - if @corporate_list_result.present? && @headers.present?
+            %button#resize_table.btn.waves-effect.waves-light
+              全表示
+            .test_confirm_area.scroll.margin-top-bottom
+              %table#test_result.request_result_table_summary_fixed.striped
+                %tbody
+                  %tr
+                    - @headers.each do |head|
+                      %th= head
+                  - @corporate_list_result.each do |k, value|
+                    %tr
+                      - @headers.each do |head|
+                        %td
+                          - contents = display_test_result(value[head])
+                          - contents.each_with_index do |content, i|
+                            - if content.class == Array
+                              - content.each do |con|
+                                = con
+                            - else
+                              = content
+                            = '; ' if i < contents.size - 1
+
+          - if @separation_info.present?
+            %h4.margin-top-bottom.icon-with-text
+              仕切り情報の一覧
+              %a.font-main-color.icon-with-text.ml-1{target: :_blank, href: 'words_explanation.pdf#page=2'}
+                %i.material-icons help
+            %div 仕切り情報は取得精度が安定してません。内容をよく確認してください。必要な時はユーザ様ご自身で整形してください。
+            .test_confirm_area.scroll.margin-top-bottom
+              - @separation_info.each do |key, texts|
+                - if @separation_info.size > 1
+                  .emphasis-text= key
+                %table.request_result_table_summary.striped
+                  %tbody
+                    - texts.each do |text|
+                      %tr
+                        %td= text
+                %br
+          %br
+          取得結果をご覧になり、取得結果に問題がありましたら、設定項目を見直し、再度テストを行なってください。
+          %br
+          もし、問題ないようでしたら、本リクストを送信してください。
+
+        - else
+          取得できませんでした。
+
+        #requested_urls_list
+          %h3 リクエストURL一覧
+          %table.striped
+            %tr
+              %th ID
+              %th URL
+              %th organization_name
+              %th type
+              %th status
+              %th finish_status
+            - @req_urls.each do |req_url|
+              %tr
+                %td= link_to req_url.id, admin_page_payments_path(user_id_or_email: @user.id, request_id: @req.id, requested_url_id: req_url.id) + '#requested_url_detail'
+                %td= req_url.url
+                %td= req_url.organization_name
+                %td= req_url.type
+                %td= req_url.status
+                %td= req_url.finish_status
+
+    - if @search_req.present?
+      #search_request_detail
+        %h3 単体リクエスト詳細
+
+        %table.striped
+          - @search_req.attributes.each do |attribute, val|
+            %tr
+              %th= attribute
+              %td= val

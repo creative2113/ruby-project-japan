@@ -1,0 +1,57 @@
+.field_corporate_list_config{url_num: url_num.to_i}
+  .row
+    .validate_msg__corporate_list_url.alert-msg.ml-2
+  .row
+    .input-field.col.s6.shrink_margin_bottom
+      = text_field_tag "request[corporate_list][#{url_num}][url]", val('', :request, :corporate_list, url_num, :url)
+      = label_tag "request[corporate_list][#{url_num}][url]", '企業一覧ページのサンプルURL'
+
+    - corporate_list_details_on = val('1', :request, :corporate_list, url_num, :details_off) == '0'
+    %span.input-field.col.s2.btn-toggle.toggle_corporate_list_url_details.cursor-pointer.shrink_margin_bottom{id: "corporate_list_#{url_num}_details_toggle_btn"}
+      .ptb-8
+        %i.material-icons.left= add_icon(!corporate_list_details_on)
+        %span= corporate_list_details_on ? '詳細設定を閉じる' : '詳細設定を開く'
+    .input-field.col.s2.corporate_list_url_details_off.shrink_margin_bottom{style: display(!corporate_list_details_on) }
+      .ptb-8 詳細設定なし
+      = hidden_field_tag "request[corporate_list][#{url_num}][details_off]", val('1', :request, :corporate_list, url_num, :details_off)
+  .corporate_list_url_details_config{style: display(corporate_list_details_on) }
+    .row
+      .ml-2 ① ページに記載されている会社名のサンプル(または、 サンプル会社名のXパス)を２つ以上、入力してください。
+    .row
+      .alert-msg.ml-2{id: "validate_msg__corporate_list_#{url_num}_org_name"}
+    .row
+      .input-field.col.s3.shrink_margin_bottom
+        = text_field_tag "request[corporate_list][#{url_num}][organization_name][1]", val('', :request, :corporate_list, url_num, :organization_name, '1')
+        = label_tag "request[corporate_list][#{url_num}][organization_name][1]", '会社名1 または そのXパス'
+      .input-field.col.s3.shrink_margin_bottom
+        = text_field_tag "request[corporate_list][#{url_num}][organization_name][2]", val('', :request, :corporate_list, url_num, :organization_name, '2')
+        = label_tag "request[corporate_list][#{url_num}][organization_name][2]", '会社名2 または そのXパス'
+      .input-field.col.s3.shrink_margin_bottom
+        = text_field_tag "request[corporate_list][#{url_num}][organization_name][3]", val('', :request, :corporate_list, url_num, :organization_name, '3')
+        = label_tag "request[corporate_list][#{url_num}][organization_name][3]", '会社名3 または そのXパス'
+      .input-field.col.s3.shrink_margin_bottom
+        = text_field_tag "request[corporate_list][#{url_num}][organization_name][4]", val('', :request, :corporate_list, url_num, :organization_name, '4')
+        = label_tag "request[corporate_list][#{url_num}][organization_name][4]", '会社名4 または そのXパス'
+    .row
+      .ml-2 ② 取得したい情報の種別名とページに記載されているサンプル文字(または、 そのXパス)を２つ以上、入力してください。ヘッダ項目の内容は含めないように気をつけてください。
+    .field_corporate_list_url_contents_configs
+      - contents_cnt = 0
+      - if val(nil, :request, :corporate_list, url_num, :contents).present?
+        - params[:request][:corporate_list][url_num][:contents].each do |idx, v|
+          = render partial: 'corporate_list_contents', locals: { url_num: url_num, data_num: idx }
+          - contents_cnt += 1
+      - else
+        = render partial: 'corporate_list_contents', locals: { url_num: url_num, data_num: '1' }
+        - contents_cnt += 1
+
+    .row.input-field
+      %button.add_corporate_list_url_contents_config.btn-small.oppose.waves-effect.waves-light.col.s1.offset-s1{type: 'button'}
+        %i.material-icons.left add_circle_outline
+        追加
+      .col.s1
+      %button.remove_corporate_list_url_contents_config.btn-small.oppose.waves-effect.waves-light.col.s1{type: 'button', class: disabled(contents_cnt == 1) }
+        %i.material-icons.left remove_circle_outline
+        削除
+    %br
+
+    %div.divider

@@ -1,0 +1,64 @@
+ja:
+  sign_up: 無料ユーザ登録
+  password_validation: "(%{minimum_password_length}文字以上、英字、数字をそれぞれ１文字以上含める)"
+  description_about_plan_select: プラン選択、および決済はユーザ登録後に行います。
+  plan_select: 課金プラン選択
+  light_plan: ライトプラン
+  standard_plan: スタンダードプラン
+  sign_up_button: 登録
+
+  edit_title: アカウント設定
+  change_card_or_subscription_plan: 課金プラン、カード情報の変更はこちら
+  waiting_mail_confirmation: "メールアドレス確認中です。アドレス: %{mail}"
+  leave_blank: パスワードを変更しない場合は空欄のままにしておいて下さい
+  need_current_password: 本人確認のため、現在のパスワードを入力して下さい
+  update_button: 更新
+  plan_change: プラン変更
+  billing_stop: 課金停止
+  cancel_my_account: 退会する
+  cancel_account: 退会
+  you_can_cancel_account_after_stop_subscription: 退会は課金停止後に行えます
+  onfirm_cancel_account: 退会してもよろしいですか?
+  back: 戻る
+
+  coupon:
+    title: クーポンのご利用
+
+  log_in: ログイン
+
+  send: 送信する
+  resend_confirmation_instructions: メールアドレス確認メールを再送する
+
+  resend_unlock_instructions: ロック解除メールを再送する
+
+  send_reset_password_instructions: パスワードリセットメールを送信する
+
+  change_your_password: パスワードを変更する
+  new _password: 新パスワード
+  confirm_new_password: 確認用新パスワード
+  change_my_password: パスワード変更
+
+  foget_password: パスワードを忘れた場合
+  didnot_receive_confirmation_instructions: メールアドレス確認メールが届かなかった場合
+  didnot_receive_unlock_instructions: ロック解除メールが届かなかった場合
+
+
+  hello: "こんにちは。%{email}さん。"
+  someone_request_change_password: どなたかがパスワード変更のリクエストを出しました。あなたのリクエストでしたら、以下のリンクからパスワード変更ができます。
+  if_you_didnot_request: もしあなたのリクエストでない場合、このメールを無視してください。
+  your_password_willnot_change: あなたが上記のリンクからアクセスして、パスワードを変更しない限り、パスワードは変更されません。
+
+  your_account_locked: ログインに一定数失敗したため、あなたのアカウントが凍結されました。
+  click_link: 凍結したアカウントを解除するには、以下のリンクを解除してください。
+  unlock_my_account: アカウント凍結を解除する
+
+  notify_password_changed: あなたのパスワードが変更されました。
+
+
+  dear_name: "%{family_name} %{given_name}様"
+  thanks_for_registration: "%{service_name}にご登録ありがとうございます。"
+  clicl_link_to_confirm_sign_up: 以下のリンクをクリックして、ユーザ登録を完了してください。
+  confirm_my_account: アカウント作成を承認
+
+  notify_email_changing: "あなたの登録メールアドレスがこちらのアドレス%{email}に変更されようとしています。"
+  notify_email_changed: "あなたの登録メールアドレスがこちらのアドレスに%{email}に変更されました。."

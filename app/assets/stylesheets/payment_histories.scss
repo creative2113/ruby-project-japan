@@ -1,0 +1,34 @@
+// Place all the styles related to the payment_histories controller here.
+// They will automatically be included in application.css.
+// You can use Sass (SCSS) here: https://sass-lang.com/
+
+#billing_data_table {
+  th {
+    text-align: center;
+  }
+
+  th.date {
+    width: 120px;
+  }
+
+  td.payment_method_cel {
+    text-align: center;
+    // width: 130px;
+  }
+
+  td.number_cel {
+    width: 50px;
+  }
+
+  th.price_cel {
+    width: 150px;
+  }
+
+  td.number_cel {
+    text-align: right;
+  }
+
+  td.price_cel {
+    text-align: right;
+  }
+}

@@ -1,0 +1,10 @@
+en:
+  activerecord:
+    errors:
+      models:
+        user:
+          attributes:
+            password:
+              invalid_password_format: must includes 1 alphabet, 1 digit.
+            agree_to_terms_of_service:
+              agree_to: must be accepted.
